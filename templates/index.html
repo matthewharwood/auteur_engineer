@@ -1,0 +1,28 @@
+{% import "macros.html" as forms %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }}</title>
+    <link href="/public/styles.css" rel="stylesheet" />
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.6.6/pixi.min.js"></script>
+    <script defer type="module" src="/public/main.js"></script>
+</head>
+<body>
+
+<main class="">
+    <div class="homepage-title-block">
+        <h1>Auteur Engineer</h1>
+        <div class="underscore">
+            <div class="bar"></div>
+            <counting-year class="datetime">████</counting-year>
+        </div>
+    </div>
+
+
+    {{ forms::themebutton(text="theme", type="text") }}
+
+</main>
+</body>
+</html>

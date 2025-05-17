@@ -1,0 +1,24 @@
+{% macro themebutton(text, type="button", class="button-default") %}
+<div class="controls">
+    <label for="theme-select">Theme:</label>
+    <select id="theme-select">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
+</div>
+
+<div class="my-element">
+    This is an example element.
+</div>
+<button>Click Me</button>
+{% endmacro themebutton %}
+
+
+{% macro pixi_interactive_button(id="interactive-button", text="Click Me", class="button-default pixi-button") %}
+<div class="pixi-button-wrapper" style="position: relative; display: inline-block;">
+    <button id="{{ id }}" class="{{ class }}" type="button">
+        {{ text }}
+    </button>
+</div>
+{% endmacro pixi_interactive_button %}
