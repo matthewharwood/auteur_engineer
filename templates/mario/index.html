@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mario</title>
+  <link href="/public/styles.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/animejs/lib/anime.iife.min.js"></script>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+    h1, p {
+      margin: 12px 0 0 0;
+    }
+    .container {
+      display: flex;
+      align-items: center;    /* Vertically centers the .card */
+      justify-content: center; /* Horizontally centers the .card */
+      min-height: 100vh;
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 500px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+      border-radius: 8px;
+    }
+    .coin-count {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      font-family: var(--font-display);
+      font-size: var(--space-10);
+      color: #E5BA20;
+      margin-left: -12px;
+      z-index: -1;
+    }
+    .coin-box {
+      position: relative;
+      width: 255px;
+      height: 255px;
+      background: #FFD223;
+      cursor: pointer;
+      /*overflow: hidden;*/
+      margin: 0;
+      padding: 0;
+      border: #E5BA20 solid 4px;
+      border-radius: 8px;
+      :hover {
+        background: #E5BA20;
+      }
+      p {
+        font-family: var(--font-display);
+        color: #E8EBE5;
+        line-height: 1;
+        margin:0;
+        font-size: 240px;
+        user-select: none;
+        display: block;
+        height: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<main class="container">
+  <div class="card">
+    <button class="coin-box">
+      <p>?</p>
+    </button>
+    <h1>Mario Handler</h1>
+    <p>Lorem ipsum dolor sit amet</p>
+  </div>
+</main>
+<script type="module" >
+
+  let coinCount = 0;
+  const coinbox = document.querySelector(".coin-box");
+  console.log(coinbox, anime);
+  coinbox.addEventListener("click", (e) => {
+    const coinCountDisplay = document.createElement("div");
+    coinCountDisplay.classList.add("coin-count");
+    coinCount = coinCount + 1;
+    coinCountDisplay.textContent = coinCount;
+    let coin = coinbox.appendChild(coinCountDisplay);
+    console.log(coin);
+    anime.animate('.coin-count', {
+      // Property keyframes
+      y: [
+        { to: '-4.75rem', ease: 'outExpo', duration: 600 },
+        { to: 0, ease: 'outBounce', duration: 800, delay: 100 }
+      ],
+      // Property specific parameters
+      rotate: {
+        from: '-1turn',
+        delay: 0
+      },
+      delay: (_, i) => i * 50, // Function based value
+      ease: 'inOutCirc',
+
+    });
+    setTimeout(() => {
+      if (coinCountDisplay.parentElement) {
+        coinCountDisplay.remove();
+        console.log("coinCountDisplay removed after 2 seconds.");
+      } else {
+        console.log("coinCountDisplay was already removed.");
+      }
+    }, 2000);
+  });
+</script>
+</body>
+</html>

@@ -10,6 +10,11 @@
     src: url('/public/ppwriter-regular-webfont.woff2') format('woff2'),
     url('/public/ppwriter-regular-webfont.woff') format('woff');
 }
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 :root {
     --text-color: #222;
     --background-color: #fff;
