@@ -22,7 +22,7 @@ pub async fn serve_index_page_handler( State(tera): State<Arc<Tera>>) -> impl In
     let page_data = IndexPageData {
         title: "Mario Page",
         heading: "Welcome to Auteur.Engineer",
-        message: "This is a message for Autuer from the index_handler",
+        message: "Click on the Mario Coin Box",
         show_extra_info: true, // Changed to test
     };
     context.insert("page", &page_data);

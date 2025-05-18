@@ -27,8 +27,6 @@
       align-items: center;
       width: 500px;
       padding: 20px;
-      border: 1px solid #ccc;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
       text-align: center;
       border-radius: 8px;
     }
@@ -48,7 +46,6 @@
       height: 255px;
       background: #FFD223;
       cursor: pointer;
-      /*overflow: hidden;*/
       margin: 0;
       padding: 0;
       border: #E5BA20 solid 4px;
@@ -76,8 +73,8 @@
     <button class="coin-box">
       <p>?</p>
     </button>
-    <h1>Mario Handler</h1>
-    <p>Lorem ipsum dolor sit amet</p>
+    <h1>{{page.title}}</h1>
+    <p>{{page.message}}</p>
   </div>
 </main>
 <script type="module" >
@@ -114,7 +111,7 @@
       } else {
         console.log("coinCountDisplay was already removed.");
       }
-    }, 2000);
+    }, 1000);
   });
 </script>
 </body>
