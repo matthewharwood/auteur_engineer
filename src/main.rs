@@ -30,6 +30,7 @@ async fn main() {
         .append_index_html_on_directories(false);
     let app = Router::new()
         .route("/", get(handlers::index_handler::serve_index_page_handler))
+        .route("/mario", get(handlers::mario_index_handler::serve_index_page_handler))
         .route("/api/hello", get(handlers::api_handlers::hello_json_api_handler))
         .nest_service("/public", static_files_service)
         .with_state(shared_tera);
