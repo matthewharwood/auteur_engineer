@@ -6,7 +6,9 @@ use axum::{
 };
 use serde::Serialize; // Needed for IndexPageData
 use std::sync::Arc;
-use tera::{Context, Tera};
+use tera::Context;
+
+use crate::AppState;
 
 // Temporary location for IndexPageData
 #[derive(Serialize)]
@@ -17,7 +19,8 @@ struct IndexPageData<'a> {
     pub show_extra_info: bool,
 }
 
-pub async fn serve_index_page_handler( State(tera): State<Arc<Tera>>) -> impl IntoResponse {
+pub async fn serve_index_page_handler(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
+    let tera = &app_state.templates;
     let mut context = Context::new();
     let page_data = IndexPageData {
         title: "Mario Page",
