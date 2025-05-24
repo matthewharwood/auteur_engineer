@@ -30,7 +30,7 @@ class CountingYear extends HTMLElement {
         this.textContent = this.starting_year;
         this.interval = setInterval(() => {
             if(Number(this.textContent) >= this.ending_year){
-                this.interval.cancel();
+                clearInterval(this.interval);
             }
             this.textContent = (Number(this.textContent) + 1).toString();
         }, 10)

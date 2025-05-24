@@ -1,14 +1,14 @@
 @font-face {
     font-display: swap;
     font-family: 'monument_extendedblack';
-    src: url('/public/monumentextended-black-webfont.woff2') format('woff2'),
-    url('/public/monumentextended-black-webfont.woff') format('woff');
+    src: url('/monumentextended-black-webfont.woff2') format('woff2'),
+    url('/monumentextended-black-webfont.woff') format('woff');
 }
 @font-face {
     font-display: swap;
     font-family: 'pp_writerregular';
-    src: url('/public/ppwriter-regular-webfont.woff2') format('woff2'),
-    url('/public/ppwriter-regular-webfont.woff') format('woff');
+    src: url('/ppwriter-regular-webfont.woff2') format('woff2'),
+    url('/ppwriter-regular-webfont.woff') format('woff');
 }
 *,
 *::before,

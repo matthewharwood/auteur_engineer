@@ -5,6 +5,7 @@ use axum::{
     Router,
 };
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 use axum::routing::post;
 use tera::Tera;
@@ -20,7 +21,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
-    let tera_instance = match Tera::new("templates/**/*.html") {
+    let tera_instance = match Tera::new("website/templates/**/*.html") {
         Ok(t) => {
             println!("Tera templates loaded successfully.");
             t
@@ -75,8 +76,9 @@ async fn main() {
         db: shared_db,
     });
     println!("AppState created successfully.");
-
-    let static_files_service = ServeDir::new("public").append_index_html_on_directories(false);
+    let public_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("public");
+    println!("Public Dir: {:?}", public_dir);
+    let static_files_service = ServeDir::new(public_dir).append_index_html_on_directories(false);
 
     let app = Router::new()
         .route(
@@ -93,7 +95,7 @@ async fn main() {
             post(handlers::post_handlers::create_post_handler)
                 .get(handlers::post_handlers::get_posts_handler),
         )
-        .nest_service("/public", static_files_service)
+        .fallback_service(static_files_service)
         .with_state(app_state);
     println!("Axum router configured.");
 
