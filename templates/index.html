@@ -20,10 +20,60 @@
         </div>
     </div>
 
+    <form id="create-post-form">
+        <label for="title">Title</label>
+        <input
+                type="text"
+                id="title"
+                name="title"
+                placeholder="Enter post title"
+                required
+        />
+        <button type="submit">Submit</button>
+    </form>
 
+    <div id="result"></div>
 
     {{ forms::themebutton(text="theme", type="text") }}
 
 </main>
+
+<script>
+    document
+        .getElementById("create-post-form")
+        .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const title = document.getElementById("title").value.trim();
+
+            if (!title) {
+                return alert("Title cannot be empty");
+            }
+
+            try {
+                const res = await fetch("/api/posts", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ title }),
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || res.statusText);
+                }
+
+                const post = await res.json();
+                document.getElementById(
+                    "result"
+                ).innerText = `Created post with ID ${post.id} and title "${post.title}"`;
+                // Optionally clear the form:
+                document.getElementById("title").value = "";
+            } catch (err) {
+                document.getElementById("result").innerText =
+                    "Error: " + err.message;
+            }
+        });
+</script>
 </body>
 </html>
