@@ -17,7 +17,7 @@ pub struct Post {
     pub title: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct CreatePost {
     pub title: String,
 }
