@@ -65,13 +65,35 @@ impl<T> Reference<T> {
 }
 
 // BEGIN TRANSACTION;
-
-// CREATE TABLE post SCHEMAFUL;
-//   -- if this fails, nothing is created
-
-// DEFINE FIELD title ON post TYPE object;
-// DEFINE FIELD title.label ON post TYPE string;
-// DEFINE FIELD title.hint  ON post TYPE string;
-
+//
+// -- 1) Create the `posts` table in schema-full mode
+// DEFINE TABLE posts SCHEMAFULL;
+//
+// -- 2) `title` → Field { label, hint, form_type }
+// DEFINE FIELD title                ON TABLE posts TYPE object;
+// DEFINE FIELD title.label          ON TABLE posts TYPE string;
+// DEFINE FIELD title.hint           ON TABLE posts TYPE string;
+// DEFINE FIELD title.form_type      ON TABLE posts TYPE string;
+//
+// -- 3) `blocks` → Vec<Block> as an array of tagged objects
+// DEFINE FIELD blocks               ON TABLE posts TYPE array<object>;
+//
+// -- 4) Header variant
+// DEFINE FIELD blocks.*.Header                             ON TABLE posts TYPE object;
+// DEFINE FIELD blocks.*.Header.content                     ON TABLE posts TYPE object;
+// DEFINE FIELD blocks.*.Header.content.label               ON TABLE posts TYPE string;
+// DEFINE FIELD blocks.*.Header.content.hint                ON TABLE posts TYPE string;
+// DEFINE FIELD blocks.*.Header.content.form_type           ON TABLE posts TYPE string;
+//
+// -- 5) Footer variant
+// DEFINE FIELD blocks.*.Footer                             ON TABLE posts TYPE object;
+// DEFINE FIELD blocks.*.Footer.copyright                   ON TABLE posts TYPE object;
+// DEFINE FIELD blocks.*.Footer.copyright.label             ON TABLE posts TYPE string;
+// DEFINE FIELD blocks.*.Footer.copyright.hint              ON TABLE posts TYPE string;
+// DEFINE FIELD blocks.*.Footer.copyright.form_type         ON TABLE posts TYPE string;
+//
 // COMMIT;
+
+
+
 //

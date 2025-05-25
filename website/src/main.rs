@@ -60,7 +60,7 @@ async fn main() {
     println!("Successfully signed in to SurrealDB.");
 
     println!("Attempting to use namespace 'test' and database 'test'...");
-    if let Err(e) = db.use_ns("portfolio").use_db("auteur").await {
+    if let Err(e) = db.use_ns("test").use_db("test").await {
         eprintln!(
             "FATAL: Could not use namespace/database in SurrealDB: {:?}",
             e
@@ -81,6 +81,10 @@ async fn main() {
     let static_files_service = ServeDir::new(public_dir).append_index_html_on_directories(false);
 
     let app = Router::new()
+        .route(
+            "/admin/posts/",
+            get(handlers::post_handlers::serve_admin_page_index_handler)
+        )
         .route(
             "/admin/posts/1234",
             get(handlers::post_handlers::serve_admin_page_id_handler)

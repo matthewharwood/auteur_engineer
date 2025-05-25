@@ -63,6 +63,48 @@ pub struct PageData<'a> {
     blocks: Vec<Block>,
 }
 
+
+pub async fn serve_admin_page_index_handler(
+    State(app_state): State<Arc<AppState>>
+) -> impl IntoResponse {
+    let tera = &app_state.templates;
+    let db   = &app_state.db;
+
+    // 1) Fetch all posts
+    let posts_res: Result<Vec<Post>, _> = db.select("posts").await;
+
+    match posts_res {
+        Ok(posts) => {
+            // 2) Insert into Tera context
+            let mut context = Context::new();
+            context.insert("posts", &posts);
+
+            // 3) Render the template
+            match tera.render("admin/posts/index.html", &context) {
+                Ok(html) => Html(html).into_response(),
+                Err(err) => {
+                    eprintln!("Template error: {}", err);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Template error: {}", err),
+                    )
+                        .into_response()
+                }
+            }
+        },
+        Err(e) => {
+            // 4) Handle DB error
+            eprintln!("DB error fetching posts: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Error loading posts: {}", e),
+            )
+                .into_response()
+        }
+    }
+}
+
+
 pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
     let tera = &app_state.templates;
     let mut context = Context::new();
@@ -99,8 +141,19 @@ pub async fn create_post_handler(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<CreatePost>,
 ) -> impl IntoResponse {
+    let title_field = Field {
+        label:      payload.title.clone(),
+        hint:       "".into(),              // or something sensible
+        form_type:  FormType::InputText,    // choose the right variant
+    };
+
+    let new_post = Post {
+        id: None,
+        title:  title_field,
+        blocks: vec![],                     // empty on create
+    };
     let db = &app_state.db;
-    let result: Result<Vec<Post>, _> = db.insert("posts").content(payload).await;
+    let result: Result<Vec<Post>, _> = db.insert("posts").content(new_post).await;
 
     match result {
         Ok(mut posts) => {
@@ -118,7 +171,7 @@ pub async fn create_post_handler(
 pub async fn get_posts_handler(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
     let db = &app_state.db;
     let result: Result<Vec<Post>, _> = db.select("posts").await;
-    println!("{}", Post::name());
+
     match result {
         Ok(posts) => Json(posts).into_response(),
         Err(e) => (

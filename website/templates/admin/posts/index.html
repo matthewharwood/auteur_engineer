@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Posts List View</title>
+</head>
+<body>
+    <ul>
+        {% for post in posts %}
+            <li>{{ post.title.label }}</li>
+        {% else %}
+            <li><em>No posts found.</em></li>
+        {% endfor %}
+    </ul>
+    <form class="form-group" id="create-post-form">
+        <label for="postTitle">Post Title</label>
+        <input
+            type="text"
+            id="postTitle"
+            name="title"
+            placeholder="put form title here"
+        />
+        <button type="submit">Create New Post</button>
+    </form>
+    <script>
+        document
+            .getElementById('create-post-form')
+            .addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const input = document.getElementById('postTitle');
+                const title = input.value.trim();
+                if (!title) return;
+
+                try {
+                    const res = await fetch('/api/posts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title })
+                    });
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || res.statusText);
+                    }
+
+                    // const newPost = await res.json();
+                    // // append to list
+                    // const li = document.createElement('li');
+                    // li.textContent = newPost.title;
+                    // document.getElementById('posts-list').appendChild(li);
+
+                    // clear the input
+                    input.value = '';
+                } catch (err) {
+                    console.error(err);
+                    alert('Failed to create post: ' + err.message);
+                }
+            });
+    </script>
+</body>
+</html>
