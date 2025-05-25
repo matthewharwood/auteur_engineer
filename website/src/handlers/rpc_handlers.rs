@@ -2,12 +2,13 @@ use axum::{
     extract::{ws::{Message, WebSocket}, State, WebSocketUpgrade},
     response::IntoResponse,
 };
-use futures::{SinkExt, StreamExt};
+use futures::StreamExt;
 use std::sync::Arc;
 use surrealdb::Surreal;
 use surrealdb::engine::remote::ws::Client as WsClient;
 
 use crate::AppState;
+use crate::handlers::post_handlers::Post;
 
 pub async fn rpc_handler(
     State(app_state): State<Arc<AppState>>,
@@ -19,7 +20,7 @@ pub async fn rpc_handler(
 
 async fn handle_ws(mut socket: WebSocket, db: Arc<Surreal<WsClient>>) {
     let mut stream = db
-        .select("posts")
+        .select::<Vec<Post>>("posts")
         .live()
         .await
         .unwrap();
