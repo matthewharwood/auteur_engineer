@@ -61,5 +61,18 @@
                 }
             });
     </script>
+    <script>
+    const ul = document.querySelector('ul');
+    const ws = new WebSocket(`ws://${location.host}/rpc`);
+    ws.onmessage = evt => {
+        const [action, post] = JSON.parse(evt.data);
+
+        if (action === 'Create') {
+            const li = document.createElement('li');
+            li.textContent = post.title.label;
+            ul.appendChild(li);
+        }
+    };
+    </script>
 </body>
 </html>

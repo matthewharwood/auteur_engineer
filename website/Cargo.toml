@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.7"
+axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tera = "1"
 tower-http = { version = "0.5", features = ["fs"] }
 surrealdb = { version = "2.3.3", features = ["kv-mem", "protocol-ws"] }
+futures = "0.3"
 plat_schema = { path = "../plat_schema" }
 plat_schema_macros = { path = "../plat_schema_macros" }
