@@ -1,13 +1,12 @@
 mod handlers;
 
 use axum::{
-    routing::{get},
+    routing::{get, post},
     Router,
 };
 use std::net::SocketAddr;
 use std::path::Path;
 use std::sync::Arc;
-use axum::routing::post;
 use tera::Tera;
 use surrealdb::engine::remote::ws::{Client as WsClient, Ws};
 use surrealdb::{opt::auth::Root, Surreal};
@@ -103,6 +102,7 @@ async fn main() {
             post(handlers::post_handlers::create_post_handler)
                 .get(handlers::post_handlers::get_posts_handler),
         )
+        .route("/rpc", get(handlers::rpc_handlers::rpc_handler))
         .fallback_service(static_files_service)
         .with_state(app_state);
     println!("Axum router configured.");
