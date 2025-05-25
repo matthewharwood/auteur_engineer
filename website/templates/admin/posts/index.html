@@ -1,3 +1,4 @@
+{% import "macros.html" as forms %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,13 +9,27 @@
     <title>Posts List View</title>
 </head>
 <body>
-    <ul>
+    <table role="grid" aria-labelledby="postsGridCaption">
+        <caption id="postsGridCaption">Posts</caption>
+        <thead role="rowgroup">
+        <tr role="row">
+            <th role="columnheader" scope="col" aria-colindex="1">Title</th>
+            <th role="columnheader" scope="col" aria-colindex="2">Action</th>
+        </tr>
+        </thead>
+        <tbody role="rowgroup" id="posts-tbody">
         {% for post in posts %}
-            <li>{{ post.title.label }}</li>
+            {{ forms::post_row_cells(title=post.title.label, id=post.id.id.String, index=loop.index) }}
         {% else %}
-            <li><em>No posts found.</em></li>
+            <tr role="row">
+                <td role="row" aria-colindex="1" colspan="2" tabindex="0">
+                    No posts were found.
+                </td>
+            </tr>
         {% endfor %}
-    </ul>
+        </tbody>
+    </table>
+
     <form class="form-group" id="create-post-form">
         <label for="postTitle">Post Title</label>
         <input
@@ -25,54 +40,52 @@
         />
         <button type="submit">Create New Post</button>
     </form>
+    <template id="post-row-template">
+        {{ forms::post_row_cells(title="", id="", index="") | safe }}
+    </template>
     <script>
-        document
-            .getElementById('create-post-form')
-            .addEventListener('submit', async (e) => {
-                e.preventDefault();
+        const ws = new WebSocket(`ws://${location.host}/rpc`);
+        const tbody = document.getElementById('posts-tbody');
+        const tmpl  = document.getElementById('post-row-template').content;
 
-                const input = document.getElementById('postTitle');
-                const title = input.value.trim();
-                if (!title) return;
+        function addPostRow(post) {
+            console.log(post);
 
-                try {
-                    const res = await fetch('/api/posts', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title })
-                    });
+            const frag = tmpl.cloneNode(true);
+            frag.querySelector('.post-aria-rowindex').setAttribute('aria-rowindex', tbody.children.length + 1);
+            frag.querySelector('.post-title').textContent = post.title.label;
+            const link = frag.querySelector('.enter-link');
+            link.href = `/posts/${post.id.id.String}`;
+            link.setAttribute('aria-label', `Enter post: ${post.title.label}`);
 
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.error || res.statusText);
-                    }
-
-                    // const newPost = await res.json();
-                    // // append to list
-                    // const li = document.createElement('li');
-                    // li.textContent = newPost.title;
-                    // document.getElementById('posts-list').appendChild(li);
-
-                    // clear the input
-                    input.value = '';
-                } catch (err) {
-                    console.error(err);
-                    alert('Failed to create post: ' + err.message);
-                }
-            });
-    </script>
-    <script>
-    const ul = document.querySelector('ul');
-    const ws = new WebSocket(`ws://${location.host}/rpc`);
-    ws.onmessage = evt => {
-        const [action, post] = JSON.parse(evt.data);
-
-        if (action === 'Create') {
-            const li = document.createElement('li');
-            li.textContent = post.title.label;
-            ul.appendChild(li);
+            tbody.append(frag);
         }
-    };
+
+        ws.onmessage = evt => {
+            const [action, post] = JSON.parse(evt.data);
+            if (action === 'Create') {
+                addPostRow(post);
+            }
+        };
+        document.getElementById('create-post-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const input = document.getElementById('postTitle');
+            const title = input.value.trim();
+            if (!title) return;
+
+            try {
+                const res = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ title })
+                });
+                if (!res.ok) throw await res.json();
+                input.value = '';
+            } catch (err) {
+                console.error(err);
+                alert('Failed to create post: ' + (err.error || err.message));
+            }
+        });
     </script>
 </body>
 </html>
