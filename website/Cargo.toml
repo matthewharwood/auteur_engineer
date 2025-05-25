@@ -11,3 +11,5 @@ serde_json = "1.0"
 tera = "1"
 tower-http = { version = "0.5", features = ["fs"] }
 surrealdb = { version = "2.3.3", features = ["kv-mem", "protocol-ws"] }
+plat_schema = { path = "../plat_schema" }
+plat_schema_macros = { path = "../plat_schema_macros" }

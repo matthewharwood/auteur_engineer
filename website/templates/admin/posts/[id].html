@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{page.title.label}}</title>
+</head>
+<body>
+        <ul>
+            {% for block in page.blocks %}
+            {% if block.Header is defined %}
+            {% set hdr = block.Header %}
+            <li>
+                Header –
+                {{ block.Header.content.label }}
+                {% if hdr.content.form_type == "InputText" %}
+                <div class="form-group">
+                    <label for="myField">{{ hdr.content.label }}</label>
+                    <input
+                            type="text"
+                            id="myField"
+                            name="{{ hdr.content.label | slugify }}"
+                            placeholder="{{ hdr.content.hint }}"
+                    />
+                </div>
+
+
+                {% endif %}
+            </li>
+            {% elif block.Footer is defined %}
+            {# It’s a Footer(Footer) #}
+            <li>
+                Footer –
+                {{ block.Footer.copyright.label }}
+                (type: {{ block.Footer.copyright.form_type }})
+            </li>
+            {% endif %}
+            {% endfor %}
+
+        </ul>
+</body>
+</html>
