@@ -2495,6 +2495,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
+name = "plat_schema"
+version = "0.1.0"
+dependencies = [
+ "plat_schema_macros",
+ "serde",
+]
+
+[[package]]
+name = "plat_schema_macros"
+version = "0.1.0"
+dependencies = [
+ "plat_schema",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
 name = "potential_utf"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
