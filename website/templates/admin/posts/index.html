@@ -55,7 +55,7 @@
             frag.querySelector('.post-aria-rowindex').setAttribute('aria-rowindex', tbody.children.length + 1);
             frag.querySelector('.post-title').textContent = post.title.label;
             const link = frag.querySelector('.enter-link');
-            link.href = `/posts/${post.id.id.String}`;
+            link.href = `/admin/posts/${post.id.id.String}`;
             link.setAttribute('aria-label', `Enter post: ${post.title.label}`);
 
             tbody.append(frag);
