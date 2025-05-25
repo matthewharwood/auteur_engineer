@@ -15,21 +15,13 @@
 {% endmacro themebutton %}
 
 
-{% macro pixi_interactive_button(id="interactive-button", text="Click Me", class="button-default pixi-button") %}
-<div class="pixi-button-wrapper" style="position: relative; display: inline-block;">
-    <button id="{{ id }}" class="{{ class }}" type="button">
-        {{ text }}
-    </button>
-</div>
-{% endmacro pixi_interactive_button %}
-
 {% macro post_row_cells(title, id, index) %}
 <tr role="row" aria-rowindex="{{ index }}" class="post-aria-rowindex">
     <td role="gridcell" aria-colindex="1" tabindex="0" class="post-title">
         {{ title | escape }}
     </td>
     <td role="gridcell" aria-colindex="2">
-        <a href="/posts/{{ id | escape }}"
+        <a href="/admin/posts/{{ id | escape }}"
            class="enter-link"
            aria-label="Enter post: {{ title | escape }}">
             Enter

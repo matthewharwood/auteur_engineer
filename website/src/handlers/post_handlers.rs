@@ -4,19 +4,20 @@ use plat_schema_macros::PlatSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
+use axum::extract::Path;
 use axum::response::Html;
 use surrealdb::sql::Thing;
 use tera::Context;
 use crate::AppState;
 
-#[derive(Serialize, Deserialize, PlatSchema)]
+#[derive(Serialize, Deserialize, PlatSchema, Debug)]
 pub struct Post {
     pub id: Option<Thing>,
     pub title: Field,
     pub blocks: Vec<Block>,
 }
 
-#[derive(Serialize, Deserialize, PlatSchema)]
+#[derive(Serialize, Deserialize, PlatSchema, Debug)]
 pub enum Block {
     Header(Header),
     Footer(Footer),
@@ -29,36 +30,35 @@ pub enum Block {
 //     pub block_index: usize,
 // }
 
-#[derive(Serialize, Deserialize, PlatSchema)]
+#[derive(Serialize, Deserialize, PlatSchema, Debug)]
 pub struct Header {
     pub content: Field,
 }
 
-#[derive(Serialize, Deserialize, PlatSchema)]
+#[derive(Serialize, Deserialize, PlatSchema, Debug)]
 pub struct Footer {
     pub copyright: Field,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub enum FormType {
     InputArea,
     InputText,
     InputDate,
 }
-#[derive(Serialize, Deserialize, PlatSchema)]
+#[derive(Serialize, Deserialize, PlatSchema, Debug)]
 pub struct Field {
     pub label: String,
     pub hint: String,
     pub form_type: FormType,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize,Debug)]
 pub struct CreatePost {
     pub title: String,
 }
-#[derive(Deserialize, Serialize)]
-pub struct PageData<'a> {
-    form_name: &'a str,
+#[derive(Deserialize, Serialize, Debug)]
+pub struct PageData {
     title: Field,
     blocks: Vec<Block>,
 }
@@ -72,6 +72,7 @@ pub async fn serve_admin_page_index_handler(
 
     // 1) Fetch all posts
     let posts_res: Result<Vec<Post>, _> = db.select("posts").await;
+    
 
     match posts_res {
         Ok(posts) => {
@@ -105,25 +106,21 @@ pub async fn serve_admin_page_index_handler(
 }
 
 
-pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
+pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>,  Path(id): Path<String>,) -> impl IntoResponse {
+
     let tera = &app_state.templates;
-    let mut context = Context::new();
-    let page_data = PageData {
-        form_name: Post::name(),
-        title: Field {
-            label: "Page B".to_string(),
-            hint: "Enter the title of your post".to_string(),
-            form_type: FormType::InputArea,
-        },
-        blocks: vec![Block::Header(Header {
-            content: Field {
-                label: "Content".to_string(),
-                hint: "Enter the content of your post".to_string(),
-                form_type: FormType::InputText,
-            },
-        })],
+    let db   = &app_state.db;
+    let posts_data: Option<Post> = match db.select(("posts", id)).await {
+        Ok(post) => post,
+        Err(e) => {
+            eprintln!("Database error: {:?}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
+        }
     };
-    context.insert("page", &page_data);
+    
+    let mut context = Context::new();
+    context.insert("post", &posts_data);
+    println!("{:?}", posts_data);
     match tera.render("admin/posts/[id].html", &context) {
         Ok(html) => Html(html).into_response(),
         Err(err) => {
@@ -150,7 +147,7 @@ pub async fn create_post_handler(
     let new_post = Post {
         id: None,
         title:  title_field,
-        blocks: vec![],                     // empty on create
+        blocks: vec![],
     };
     let db = &app_state.db;
     let result: Result<Vec<Post>, _> = db.insert("posts").content(new_post).await;

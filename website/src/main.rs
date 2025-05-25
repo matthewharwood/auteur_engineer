@@ -85,7 +85,7 @@ async fn main() {
             get(handlers::post_handlers::serve_admin_page_index_handler)
         )
         .route(
-            "/admin/posts/1234",
+            "/admin/posts/:id",
             get(handlers::post_handlers::serve_admin_page_id_handler)
         )
         .route(
