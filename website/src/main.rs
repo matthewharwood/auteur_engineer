@@ -82,6 +82,10 @@ async fn main() {
 
     let app = Router::new()
         .route(
+            "/admin/posts/1234",
+            get(handlers::post_handlers::serve_admin_page_id_handler)
+        )
+        .route(
             "/",
             get(handlers::index_handler::serve_index_page_handler),
         )
