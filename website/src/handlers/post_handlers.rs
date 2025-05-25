@@ -1,20 +1,33 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
+use plat_schema::Schema;
+use plat_schema_macros::PlatSchema;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Thing;
 use serde_json::json;
 use std::sync::Arc;
+use surrealdb::sql::Thing;
 
 use crate::AppState;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PlatSchema)]
 pub struct Post {
     pub id: Option<Thing>,
     pub title: String,
+    pub blocks: Vec<Block>,
+}
+
+#[derive(Serialize, Deserialize, PlatSchema)]
+pub enum Block {
+    Header(Header),
+    Footer(Footer),
+}
+
+#[derive(Serialize, Deserialize, PlatSchema)]
+pub struct Header {
+    pub text: String,
+}
+#[derive(Serialize, Deserialize, PlatSchema)]
+pub struct Footer {
+    pub copyright: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -27,10 +40,7 @@ pub async fn create_post_handler(
     Json(payload): Json<CreatePost>,
 ) -> impl IntoResponse {
     let db = &app_state.db;
-    let result: Result<Vec<Post>, _> = db
-        .insert("posts")
-        .content(payload)
-        .await;
+    let result: Result<Vec<Post>, _> = db.insert("posts").content(payload).await;
 
     match result {
         Ok(mut posts) => {
@@ -45,12 +55,10 @@ pub async fn create_post_handler(
     }
 }
 
-pub async fn get_posts_handler(
-    State(app_state): State<Arc<AppState>>,
-) -> impl IntoResponse {
+pub async fn get_posts_handler(State(app_state): State<Arc<AppState>>) -> impl IntoResponse {
     let db = &app_state.db;
     let result: Result<Vec<Post>, _> = db.select("posts").await;
-
+    println!("{}", Post::name());
     match result {
         Ok(posts) => Json(posts).into_response(),
         Err(e) => (

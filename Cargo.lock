@@ -4541,6 +4541,8 @@ name = "website"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "plat_schema",
+ "plat_schema_macros",
  "serde",
  "serde_json",
  "surrealdb",
