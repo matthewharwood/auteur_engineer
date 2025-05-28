@@ -1,18 +1,27 @@
-{% macro themebutton(text, type="button", class="button-default") %}
-<div class="controls">
-    <label for="theme-select">Theme:</label>
-    <select id="theme-select">
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-    </select>
-</div>
-
-<div class="my-element">
-    This is an example element.
-</div>
-<button>Click Me</button>
-{% endmacro themebutton %}
+{% macro theme_toggle_button(id="theme-toggle", class="") -%}
+    <icon-select id="{{ id }}" class="{{ class }}"></icon-select>
+    <template id="icon-select-template">
+        <div class="icon-select">
+            <button class="trigger" aria-haspopup="listbox" aria-expanded="false">
+                <svg class="icon sun" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                    <line x1="12" y1="1" x2="12" y2="4" stroke="currentColor" stroke-width="2"/>
+                    <line x1="12" y1="20" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
+                    <line x1="1"  y1="12" x2="4"  y2="12" stroke="currentColor" stroke-width="2"/>
+                    <line x1="20" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <svg class="icon moon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /><
+                    /svg>
+            </button>
+            <ul class="dropdown" role="listbox" aria-hidden="true">
+                <li role="option" data-value="system">System</li>
+                <li role="option" data-value="light">Light</li>
+                <li role="option" data-value="dark">Dark</li>
+            </ul>
+        </div>
+    </template>
+{%- endmacro %}
 
 
 {% macro post_row_cells(title, id, index) %}

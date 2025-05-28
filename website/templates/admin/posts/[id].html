@@ -1,3 +1,4 @@
+{% import "macros.html" as forms %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,11 +7,46 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>{{post.title.label}}</title>
+    <link href="/styles.css" rel="stylesheet" />
+    <script defer type="module" src="/main.js"></script>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: var(--font-display);
+            background: var(--background-color);
+        }
+
+        main {
+            height: 100vh;
+        }
+
+        .navigation-bar {
+            border-bottom: 1px solid var(--secondary-color);
+            padding: var(--space-2) var(--space-4);
+            text-transform: uppercase;
+            a {
+                color: var(--text-color);
+                text-decoration: none;
+            }
+        }
+    </style>
 </head>
 <body>
-        <ul>
-
-
-        </ul>
+    <nav class="navigation-bar">
+        <a href="/admin/posts/">Auteur</a>
+        {{ forms::theme_toggle_button(text="theme-toggle", class="text") }}
+    </nav>
+    <main>
+        <div class="block-add">
+            <select>
+                <option>header</option>
+                <option>footer</option>
+            </select>
+            <button>add block</button>
+        </div>
+    </main>
 </body>
 </html>
