@@ -21,6 +21,26 @@
 
         main {
             height: 100vh;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--space-4);
+            padding: var(--space-4);
+        }
+
+        .existing-blocks {
+            overflow-y: auto;
+            padding-right: var(--space-2);
+        }
+
+        .preview {
+            border-top: 1px solid var(--secondary-color);
+            margin-top: var(--space-2);
+        }
+
+        @media (max-width: 600px) {
+            main {
+                grid-template-columns: 1fr;
+            }
         }
 
         .navigation-bar {
@@ -40,13 +60,16 @@
         {{ forms::theme_toggle_button(text="theme-toggle", class="text") }}
     </nav>
     <main>
-        <div class="block-add">
-            <select>
-                <option>header</option>
-                <option>footer</option>
-            </select>
-            <button>add block</button>
+        <div class="existing-blocks">
+            {% for block in post.blocks %}
+                <pre>{{ block | escape }}</pre>
+            {% else %}
+                <p>No blocks</p>
+            {% endfor %}
         </div>
+        <block-adder
+            data-post-id="{{ post.id.id.String }}"
+            data-schemas='{{ schemas_json }}'></block-adder>
     </main>
 </body>
 </html>

@@ -95,3 +95,61 @@ class CountingYear extends HTMLElement {
 }
 
 customElements.define('counting-year', CountingYear);
+class BlockAdder extends HTMLElement {
+    connectedCallback() {
+        this.schemas = JSON.parse(this.dataset.schemas || '[]');
+        this.postId = this.dataset.postId;
+        this.select = document.createElement('select');
+        this.form = document.createElement('form');
+        this.preview = document.createElement('div');
+        this.preview.className = 'preview';
+        this.append(this.select, this.form, this.preview);
+        this.schemas.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.block_type;
+            opt.textContent = s.block_type;
+            this.select.appendChild(opt);
+        });
+        this.select.addEventListener('change', () => this.renderFields());
+        this.form.addEventListener('submit', e => this.submitBlock(e));
+        this.renderFields();
+    }
+
+    renderFields() {
+        const type = this.select.value;
+        this.form.innerHTML = '';
+        const schema = this.schemas.find(s => s.block_type === type);
+        if (!schema) return;
+        schema.fields.forEach(f => {
+            const label = document.createElement('label');
+            label.textContent = f.label;
+            const input = document.createElement(f.form_type === 'InputArea' ? 'textarea' : 'input');
+            input.name = f.name;
+            this.form.append(label, input);
+        });
+        const btn = document.createElement('button');
+        btn.type = 'submit';
+        btn.textContent = 'Add Block';
+        this.form.append(btn);
+    }
+
+    async submitBlock(e) {
+        e.preventDefault();
+        const type = this.select.value;
+        const data = Object.fromEntries(new FormData(this.form).entries());
+        const payload = { block_type: type, block_data: data };
+        const res = await fetch(`/api/posts/${this.postId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            this.dispatchEvent(new CustomEvent('blockAdded', { bubbles: true }));
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            alert('Failed to add block');
+        }
+    }
+}
+
+customElements.define('block-adder', BlockAdder);
