@@ -1,21 +1,25 @@
 mod handlers;
+mod block_schemas;
 
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 use std::net::SocketAddr;
 use std::path::Path;
 use std::sync::Arc;
 use tera::Tera;
+use serde_json;
 use surrealdb::engine::remote::ws::{Client as WsClient, Ws};
 use surrealdb::{opt::auth::Root, Surreal};
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
+use block_schemas::get_all_block_schemas;
 
 pub struct AppState {
     pub templates: Arc<Tera>,
     pub db: Arc<Surreal<WsClient>>,
+    pub block_schemas_json: String,
 }
 
 #[tokio::main]
@@ -70,9 +74,13 @@ async fn main() {
 
     let shared_db = Arc::new(db);
 
+    let block_schemas_json = serde_json::to_string(get_all_block_schemas())
+        .expect("schema serialization");
+
     let app_state = Arc::new(AppState {
         templates: shared_tera.clone(),
         db: shared_db,
+        block_schemas_json,
     });
     println!("AppState created successfully.");
     let public_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("public");
@@ -101,6 +109,10 @@ async fn main() {
             "/api/posts",
             post(handlers::post_handlers::create_post_handler)
                 .get(handlers::post_handlers::get_posts_handler),
+        )
+        .route(
+            "/api/posts/:id",
+            put(handlers::post_handlers::update_post_handler),
         )
         .route("/rpc", get(handlers::rpc_handlers::rpc_handler))
         .fallback_service(static_files_service)

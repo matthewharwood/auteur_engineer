@@ -120,6 +120,7 @@ pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>,
     
     let mut context = Context::new();
     context.insert("post", &posts_data);
+    context.insert("schemas_json", &app_state.block_schemas_json);
     println!("{:?}", posts_data);
     match tera.render("admin/posts/[id].html", &context) {
         Ok(html) => Html(html).into_response(),
@@ -171,6 +172,70 @@ pub async fn get_posts_handler(State(app_state): State<Arc<AppState>>) -> impl I
 
     match result {
         Ok(posts) => Json(posts).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "block_type", content = "block_data")]
+pub enum UpsertBlockPayload {
+    Header { content: String },
+    Footer { copyright: String },
+}
+
+pub async fn update_post_handler(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(payload): Json<UpsertBlockPayload>,
+) -> impl IntoResponse {
+    let db = &app_state.db;
+
+    let mut post: Option<Post> = match db.select(("posts", id.clone())).await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("DB error: {:?}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": e.to_string()})),
+            )
+                .into_response();
+        }
+    };
+
+    let Some(mut post) = post else {
+        return (StatusCode::NOT_FOUND, "post not found").into_response();
+    };
+
+    let block = match payload {
+        UpsertBlockPayload::Header { content } => Block::Header(Header {
+            content: Field {
+                label: content,
+                hint: String::new(),
+                form_type: FormType::InputArea,
+            },
+        }),
+        UpsertBlockPayload::Footer { copyright } => Block::Footer(Footer {
+            copyright: Field {
+                label: copyright,
+                hint: String::new(),
+                form_type: FormType::InputText,
+            },
+        }),
+    };
+    post.blocks.push(block);
+
+    let result: Result<Option<Post>, _> = db
+        .update(("posts", id))
+        .merge(json!({"blocks": post.blocks}))
+        .await;
+
+    match result {
+        Ok(Some(updated)) => Json(updated).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, "post not found").into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": e.to_string()})),
