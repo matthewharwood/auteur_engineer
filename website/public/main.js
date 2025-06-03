@@ -72,9 +72,6 @@ class IconSelect extends HTMLElement {
 
 customElements.define('icon-select', IconSelect);
 
-
-
-
 class CountingYear extends HTMLElement {
     constructor() {
         super();
@@ -95,3 +92,61 @@ class CountingYear extends HTMLElement {
 }
 
 customElements.define('counting-year', CountingYear);
+
+// jsaction dispatcher
+document.addEventListener('click', e => {
+    const act = e.target.getAttribute('jsaction');
+    if (!act) return;
+    const [evt, method] = act.split(':');
+    if (evt !== 'click') return;
+    const host = e.target.closest('[is="art-counter"]');
+    if (host && typeof host[method] === 'function') host[method](e);
+});
+
+class ArtCounter extends HTMLFormElement {
+    static observedAttributes = ['count'];
+
+    connectedCallback() {
+        this.updateText(this.getAttribute('count'));
+    }
+
+    inc(e) {
+        e.preventDefault();
+        const next = (+this.getAttribute('count') + 1).toString();
+        this.setAttribute('count', next);
+        const fd = new FormData(this);
+        fd.set('action', 'inc');
+        fetch(this.action, { method: this.method, body: fd });
+    }
+
+    dec(e) {
+        e.preventDefault();
+        const next = (+this.getAttribute('count') - 1).toString();
+        this.setAttribute('count', next);
+        const fd = new FormData(this);
+        fd.set('action', 'dec');
+        fetch(this.action, { method: this.method, body: fd });
+    }
+
+    attributeChangedCallback(name, _, val) {
+        if (name === 'count') this.updateText(val);
+    }
+    updateText(val) {
+        this.querySelector('button').textContent = `Increment (${val})`;
+    }
+}
+customElements.define('art-counter', ArtCounter, { extends: 'form' });
+
+function setupSockets() {
+    document.querySelectorAll('script[data-for]').forEach(s => {
+        const id = s.dataset.for;
+        const socket = new WebSocket(`ws://${location.host}/ws/counter/${id}`);
+        socket.addEventListener('message', e => {
+            const msg = JSON.parse(e.data);
+            const el = document.querySelector(`form[data-uid="${msg.id}"]`);
+            if (el) el.setAttribute('count', msg.count);
+        });
+    });
+}
+
+setupSockets();
