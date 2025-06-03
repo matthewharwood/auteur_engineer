@@ -12,10 +12,14 @@ use surrealdb::engine::remote::ws::{Client as WsClient, Ws};
 use surrealdb::{opt::auth::Root, Surreal};
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
+use tokio::sync::broadcast;
+
+use handlers::counter_handlers::CounterUpdate;
 
 pub struct AppState {
     pub templates: Arc<Tera>,
     pub db: Arc<Surreal<WsClient>>,
+    pub counter_tx: broadcast::Sender<CounterUpdate>,
 }
 
 #[tokio::main]
@@ -69,10 +73,12 @@ async fn main() {
     println!("Successfully set SurrealDB namespace and database.");
 
     let shared_db = Arc::new(db);
+    let (counter_tx, _) = broadcast::channel(16);
 
     let app_state = Arc::new(AppState {
         templates: shared_tera.clone(),
         db: shared_db,
+        counter_tx: counter_tx.clone(),
     });
     println!("AppState created successfully.");
     let public_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("public");
@@ -101,6 +107,19 @@ async fn main() {
             "/api/posts",
             post(handlers::post_handlers::create_post_handler)
                 .get(handlers::post_handlers::get_posts_handler),
+        )
+        .route(
+            "/counter/:id",
+            get(handlers::counter_handlers::serve_counter_page),
+        )
+        .route(
+            "/api/counter/:id",
+            post(handlers::counter_handlers::update_counter)
+                .get(handlers::counter_handlers::get_counter),
+        )
+        .route(
+            "/ws/counter/:id",
+            get(handlers::counter_handlers::ws_counter),
         )
         .route("/rpc", get(handlers::rpc_handlers::rpc_handler))
         .fallback_service(static_files_service)

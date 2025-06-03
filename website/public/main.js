@@ -72,9 +72,6 @@ class IconSelect extends HTMLElement {
 
 customElements.define('icon-select', IconSelect);
 
-
-
-
 class CountingYear extends HTMLElement {
     constructor() {
         super();
@@ -95,3 +92,68 @@ class CountingYear extends HTMLElement {
 }
 
 customElements.define('counting-year', CountingYear);
+
+import { signal, effect, computed } from 'https://esm.sh/@preact/signals-core';
+
+const table = new Map();
+export function useCounter(id, initial = 0) {
+    if (!table.has(id)) table.set(id, signal(Number(initial)));
+    return table.get(id);
+}
+
+class CounterButton extends HTMLButtonElement {
+    connectedCallback() {
+        const jsAction = this.getAttribute('jsAction');
+        if (jsAction) {
+            const [event, method] = jsAction.split(':');
+            if (event && method && typeof this[method] === 'function') {
+                this.addEventListener(event, e => this[method](e));
+            }
+        }
+    }
+
+    change(e) {
+        e.preventDefault();
+        const id = this.getAttribute('counter-id');
+        const initial = this.getAttribute('counter-initial') || 0;
+        const delta = Number(this.dataset.delta || '0');
+        if (!id) return;
+        const sig = useCounter(id, initial);
+        sig.value = Number(sig.value) + delta;
+        this.setAttribute('counter-value', sig.value);
+    }
+}
+customElements.define('counter-button', CounterButton, { extends: 'button' });
+
+class ArtCounterValue extends HTMLParagraphElement {
+    connectedCallback() {
+        const id = this.getAttribute('counter-id');
+        const initial = this.getAttribute('counter-initial') || 0;
+        if (!id) return;
+        const sig = useCounter(id, initial);
+        this.dispose = effect(() => {
+            this.textContent = String(sig.value);
+        });
+    }
+    disconnectedCallback() {
+        this.dispose?.();
+    }
+}
+customElements.define('art-counter-value', ArtCounterValue, { extends: 'p' });
+
+
+class CounterWs extends HTMLElement {
+    connectedCallback() {
+        const id = this.getAttribute('counter-id');
+        if (!id) return;
+        const sig = useCounter(id);
+        const socket = new WebSocket(`ws://${location.host}/ws/counter/${id}`);
+        socket.addEventListener('message', e => {
+            const msg = JSON.parse(e.data);
+            if (msg.id === id) {
+                sig.value = Number(msg.count);
+            }
+        });
+    }
+}
+customElements.define('counter-ws', CounterWs);
