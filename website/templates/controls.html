@@ -1,28 +1,28 @@
 {% macro counter_form(c) %}
-<form is="js-action"
-        action="/api/counter/{{ c.id }}"
-        method="post"
-        counter-id="{{ c.id }}"
-        counter-initial="{{ c.value }}">
-    <button is="inc-button"
+<form action="/api/counter/{{ c.id }}" method="post" data-uid="{{ c.id }}">
+    <button is="counter-button"
+            jsAction="click:change:counter-button"
             type="submit"
             name="action"
             value="inc"
             counter-id="{{ c.id }}"
-            counter-initial="{{ c.value }}">
+            counter-initial="{{ c.value }}"
+            data-delta="1">
         Increment
     </button>
     <p is="art-counter-value"
        counter-id="{{ c.id }}"
        counter-initial="{{ c.value }}">{{ c.value }}</p>
-    <button is="dec-button"
+    <button is="counter-button"
+            jsAction="click:change:counter-button"
             type="submit"
             name="action"
             value="dec"
             counter-id="{{ c.id }}"
-            counter-initial="{{ c.value }}">
+            counter-initial="{{ c.value }}"
+            data-delta="-1">
         Decrement
     </button>
-  </form>
-  <counter-ws counter-id="{{ c.id }}"></counter-ws>
+</form>
+<counter-ws counter-id="{{ c.id }}"></counter-ws>
 {% endmacro %}

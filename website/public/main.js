@@ -101,33 +101,29 @@ export function useCounter(id, initial = 0) {
     return table.get(id);
 }
 
-class IncButton extends HTMLButtonElement {
+class CounterButton extends HTMLButtonElement {
     connectedCallback() {
-        this.addEventListener('click', () => {
-            const id = this.getAttribute('counter-id');
-            const initial = this.getAttribute('counter-initial') || 0;
-            if (!id) return;
-            const sig = useCounter(id, initial);
-            sig.value = Number(sig.value) + 1;
-            this.setAttribute('counter-value', sig.value);
-        });
+        const jsAction = this.getAttribute('jsAction');
+        if (jsAction) {
+            const [event, method] = jsAction.split(':');
+            if (event && method && typeof this[method] === 'function') {
+                this.addEventListener(event, e => this[method](e));
+            }
+        }
     }
-}
-customElements.define('inc-button', IncButton, { extends: 'button' });
 
-class DecButton extends HTMLButtonElement {
-    connectedCallback() {
-        this.addEventListener('click', () => {
-            const id = this.getAttribute('counter-id');
-            const initial = this.getAttribute('counter-initial') || 0;
-            if (!id) return;
-            const sig = useCounter(id, initial);
-            sig.value = Number(sig.value) - 1;
-            this.setAttribute('counter-value', sig.value);
-        });
+    change(e) {
+        e.preventDefault();
+        const id = this.getAttribute('counter-id');
+        const initial = this.getAttribute('counter-initial') || 0;
+        const delta = Number(this.dataset.delta || '0');
+        if (!id) return;
+        const sig = useCounter(id, initial);
+        sig.value = Number(sig.value) + delta;
+        this.setAttribute('counter-value', sig.value);
     }
 }
-customElements.define('dec-button', DecButton, { extends: 'button' });
+customElements.define('counter-button', CounterButton, { extends: 'button' });
 
 class ArtCounterValue extends HTMLParagraphElement {
     connectedCallback() {
@@ -145,23 +141,6 @@ class ArtCounterValue extends HTMLParagraphElement {
 }
 customElements.define('art-counter-value', ArtCounterValue, { extends: 'p' });
 
-class JsAction extends HTMLFormElement {
-    connectedCallback() {
-        const id = this.getAttribute('counter-id');
-        const initial = this.getAttribute('counter-initial') || 0;
-        if (!id) return;
-        const sig = useCounter(id, initial);
-        const doubleValue = computed(() => sig.value * 2);
-        this.dispose = effect(() => {
-            this.setAttribute('counter-value', sig.value);
-            this.setAttribute('double-value', doubleValue.value);
-        });
-    }
-    disconnectedCallback() {
-        this.dispose?.();
-    }
-}
-customElements.define('js-action', JsAction, { extends: 'form' });
 
 class CounterWs extends HTMLElement {
     connectedCallback() {
