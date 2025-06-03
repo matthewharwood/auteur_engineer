@@ -1,6 +1,5 @@
 {% macro counter_form(c) %}
-<counter-signal>
-  <form is="js-action"
+<form is="js-action"
         action="/api/counter/{{ c.id }}"
         method="post"
         counter-id="{{ c.id }}"
@@ -26,5 +25,4 @@
     </button>
   </form>
   <counter-ws counter-id="{{ c.id }}"></counter-ws>
-</counter-signal>
 {% endmacro %}

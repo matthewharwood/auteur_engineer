@@ -95,38 +95,19 @@ customElements.define('counting-year', CountingYear);
 
 import { signal, effect, computed } from 'https://esm.sh/@preact/signals-core';
 
-class CounterSignal extends HTMLElement {
-    constructor() {
-        super();
-        this.counterSignals = new Map();
-    }
-    getCounterSignal(id, initial = 0) {
-        if (!this.counterSignals.has(id)) {
-            this.counterSignals.set(id, signal(Number(initial)));
-        }
-        return this.counterSignals.get(id);
-    }
-    connectedCallback() {
-        for (const child of this.children) {
-            if (typeof child.setCounterSignal === 'function') {
-                child.setCounterSignal(this.getCounterSignal.bind(this));
-            }
-        }
-    }
+const table = new Map();
+export function useCounter(id, initial = 0) {
+    if (!table.has(id)) table.set(id, signal(Number(initial)));
+    return table.get(id);
 }
-customElements.define('counter-signal', CounterSignal);
 
 class IncButton extends HTMLButtonElement {
-    setCounterSignal(getCounterSignal) {
-        this._getCounterSignal = getCounterSignal;
-    }
     connectedCallback() {
-        this.addEventListener('click', e => {
-            e.preventDefault();
+        this.addEventListener('click', () => {
             const id = this.getAttribute('counter-id');
             const initial = this.getAttribute('counter-initial') || 0;
-            if (!this._getCounterSignal || !id) return;
-            const sig = this._getCounterSignal(id, initial);
+            if (!id) return;
+            const sig = useCounter(id, initial);
             sig.value = Number(sig.value) + 1;
             this.setAttribute('counter-value', sig.value);
         });
@@ -135,16 +116,12 @@ class IncButton extends HTMLButtonElement {
 customElements.define('inc-button', IncButton, { extends: 'button' });
 
 class DecButton extends HTMLButtonElement {
-    setCounterSignal(getCounterSignal) {
-        this._getCounterSignal = getCounterSignal;
-    }
     connectedCallback() {
-        this.addEventListener('click', e => {
-            e.preventDefault();
+        this.addEventListener('click', () => {
             const id = this.getAttribute('counter-id');
             const initial = this.getAttribute('counter-initial') || 0;
-            if (!this._getCounterSignal || !id) return;
-            const sig = this._getCounterSignal(id, initial);
+            if (!id) return;
+            const sig = useCounter(id, initial);
             sig.value = Number(sig.value) - 1;
             this.setAttribute('counter-value', sig.value);
         });
@@ -153,14 +130,11 @@ class DecButton extends HTMLButtonElement {
 customElements.define('dec-button', DecButton, { extends: 'button' });
 
 class ArtCounterValue extends HTMLParagraphElement {
-    setCounterSignal(getCounterSignal) {
-        this._getCounterSignal = getCounterSignal;
-    }
     connectedCallback() {
         const id = this.getAttribute('counter-id');
         const initial = this.getAttribute('counter-initial') || 0;
-        if (!this._getCounterSignal || !id) return;
-        const sig = this._getCounterSignal(id, initial);
+        if (!id) return;
+        const sig = useCounter(id, initial);
         this.dispose = effect(() => {
             this.textContent = String(sig.value);
         });
@@ -172,14 +146,11 @@ class ArtCounterValue extends HTMLParagraphElement {
 customElements.define('art-counter-value', ArtCounterValue, { extends: 'p' });
 
 class JsAction extends HTMLFormElement {
-    setCounterSignal(getCounterSignal) {
-        this._getCounterSignal = getCounterSignal;
-    }
     connectedCallback() {
         const id = this.getAttribute('counter-id');
         const initial = this.getAttribute('counter-initial') || 0;
-        if (!this._getCounterSignal || !id) return;
-        const sig = this._getCounterSignal(id, initial);
+        if (!id) return;
+        const sig = useCounter(id, initial);
         const doubleValue = computed(() => sig.value * 2);
         this.dispose = effect(() => {
             this.setAttribute('counter-value', sig.value);
@@ -193,13 +164,10 @@ class JsAction extends HTMLFormElement {
 customElements.define('js-action', JsAction, { extends: 'form' });
 
 class CounterWs extends HTMLElement {
-    setCounterSignal(getCounterSignal) {
-        this._getCounterSignal = getCounterSignal;
-    }
     connectedCallback() {
         const id = this.getAttribute('counter-id');
-        if (!this._getCounterSignal || !id) return;
-        const sig = this._getCounterSignal(id);
+        if (!id) return;
+        const sig = useCounter(id);
         const socket = new WebSocket(`ws://${location.host}/ws/counter/${id}`);
         socket.addEventListener('message', e => {
             const msg = JSON.parse(e.data);
