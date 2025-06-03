@@ -1,24 +1,26 @@
 {% macro counter_form(c) %}
 <form is="art-counter"
+      id="{{ c.id }}"
       action="/api/counter/{{ c.id }}"
       method="post"
       data-uid="{{ c.id }}"
       count="{{ c.value }}">
-  <button type="submit"
+  <button is="js-action"
+          data-inc
+          type="submit"
           name="action"
           value="inc"
-          jsaction="click:inc">
+          action="click:inc:{{ c.id }}">
       Increment ({{ c.value }})
   </button>
-  <button type="submit"
+  <button is="js-action"
+          type="submit"
           name="action"
           value="dec"
-          jsaction="click:dec">
+          action="click:dec:{{ c.id }}">
       Decrement
   </button>
 </form>
 
-<script type="application/json" data-for="{{ c.id }}">
-  {{ c.value }}
-</script>
+<counter-ws uid="{{ c.id }}"></counter-ws>
 {% endmacro %}

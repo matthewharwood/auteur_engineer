@@ -93,60 +93,77 @@ class CountingYear extends HTMLElement {
 
 customElements.define('counting-year', CountingYear);
 
-// jsaction dispatcher
-document.addEventListener('click', e => {
-    const act = e.target.getAttribute('jsaction');
-    if (!act) return;
-    const [evt, method] = act.split(':');
-    if (evt !== 'click') return;
-    const host = e.target.closest('[is="art-counter"]');
-    if (host && typeof host[method] === 'function') host[method](e);
-});
+import { signal, effect } from 'https://esm.sh/@preact/signals-core';
 
 class ArtCounter extends HTMLFormElement {
     static observedAttributes = ['count'];
 
+    constructor() {
+        super();
+        this.count = signal(parseInt(this.getAttribute('count') || '0', 10));
+    }
+
     connectedCallback() {
-        this.updateText(this.getAttribute('count'));
+        this.incBtn = this.querySelector('[data-inc]');
+        this.disposer = effect(() => {
+            if (this.incBtn) {
+                this.incBtn.textContent = `Increment (${this.count.value})`;
+            }
+        });
     }
 
-    inc(e) {
-        e.preventDefault();
-        const next = (+this.getAttribute('count') + 1).toString();
-        this.setAttribute('count', next);
-        const fd = new FormData(this);
-        fd.set('action', 'inc');
-        fetch(this.action, { method: this.method, body: fd });
+    attributeChangedCallback(name, _old, val) {
+        if (name === 'count') {
+            this.count.value = parseInt(val, 10);
+        }
     }
 
-    dec(e) {
-        e.preventDefault();
-        const next = (+this.getAttribute('count') - 1).toString();
-        this.setAttribute('count', next);
-        const fd = new FormData(this);
-        fd.set('action', 'dec');
-        fetch(this.action, { method: this.method, body: fd });
-    }
-
-    attributeChangedCallback(name, _, val) {
-        if (name === 'count') this.updateText(val);
-    }
-    updateText(val) {
-        this.querySelector('button').textContent = `Increment (${val})`;
+    disconnectedCallback() {
+        this.disposer?.();
     }
 }
 customElements.define('art-counter', ArtCounter, { extends: 'form' });
 
-function setupSockets() {
-    document.querySelectorAll('script[data-for]').forEach(s => {
-        const id = s.dataset.for;
+const actions = {
+    inc(e, id) {
+        const host = document.getElementById(id);
+        if (host) {
+            const next = (+host.getAttribute('count') + 1).toString();
+            host.setAttribute('count', next);
+        }
+    },
+    dec(e, id) {
+        const host = document.getElementById(id);
+        if (host) {
+            const next = (+host.getAttribute('count') - 1).toString();
+            host.setAttribute('count', next);
+        }
+    }
+};
+
+document.addEventListener('click', e => {
+    const btn = e.target.closest('button[is="js-action"]');
+    if (!btn) return;
+    const spec = btn.getAttribute('action');
+    if (!spec) return;
+    const [evt, method, comp] = spec.split(':');
+    if (evt !== 'click') return;
+    const fn = actions[method];
+    if (fn) fn(e, comp);
+});
+
+class CounterWs extends HTMLElement {
+    connectedCallback() {
+        const id = this.getAttribute('uid');
+        if (!id) return;
         const socket = new WebSocket(`ws://${location.host}/ws/counter/${id}`);
         socket.addEventListener('message', e => {
             const msg = JSON.parse(e.data);
-            const el = document.querySelector(`form[data-uid="${msg.id}"]`);
-            if (el) el.setAttribute('count', msg.count);
+            const form = document.getElementById(msg.id);
+            if (form) form.setAttribute('count', msg.count);
         });
-    });
+    }
 }
+customElements.define('counter-ws', CounterWs);
 
-setupSockets();
+customElements.define('js-action', class extends HTMLButtonElement {}, { extends: 'button' });
