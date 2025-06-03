@@ -93,77 +93,120 @@ class CountingYear extends HTMLElement {
 
 customElements.define('counting-year', CountingYear);
 
-import { signal, effect } from 'https://esm.sh/@preact/signals-core';
+import { signal, effect, computed } from 'https://esm.sh/@preact/signals-core';
 
-class ArtCounter extends HTMLFormElement {
-    static observedAttributes = ['count'];
-
+class CounterSignal extends HTMLElement {
     constructor() {
         super();
-        this.count = signal(parseInt(this.getAttribute('count') || '0', 10));
+        this.counterSignals = new Map();
     }
-
-    connectedCallback() {
-        this.incBtn = this.querySelector('[data-inc]');
-        this.disposer = effect(() => {
-            if (this.incBtn) {
-                this.incBtn.textContent = `Increment (${this.count.value})`;
-            }
-        });
-    }
-
-    attributeChangedCallback(name, _old, val) {
-        if (name === 'count') {
-            this.count.value = parseInt(val, 10);
+    getCounterSignal(id, initial = 0) {
+        if (!this.counterSignals.has(id)) {
+            this.counterSignals.set(id, signal(Number(initial)));
         }
+        return this.counterSignals.get(id);
     }
-
-    disconnectedCallback() {
-        this.disposer?.();
+    connectedCallback() {
+        for (const child of this.children) {
+            if (typeof child.setCounterSignal === 'function') {
+                child.setCounterSignal(this.getCounterSignal.bind(this));
+            }
+        }
     }
 }
-customElements.define('art-counter', ArtCounter, { extends: 'form' });
+customElements.define('counter-signal', CounterSignal);
 
-const actions = {
-    inc(e, id) {
-        const host = document.getElementById(id);
-        if (host) {
-            const next = (+host.getAttribute('count') + 1).toString();
-            host.setAttribute('count', next);
-        }
-    },
-    dec(e, id) {
-        const host = document.getElementById(id);
-        if (host) {
-            const next = (+host.getAttribute('count') - 1).toString();
-            host.setAttribute('count', next);
-        }
+class IncButton extends HTMLButtonElement {
+    setCounterSignal(getCounterSignal) {
+        this._getCounterSignal = getCounterSignal;
     }
-};
+    connectedCallback() {
+        this.addEventListener('click', e => {
+            e.preventDefault();
+            const id = this.getAttribute('counter-id');
+            const initial = this.getAttribute('counter-initial') || 0;
+            if (!this._getCounterSignal || !id) return;
+            const sig = this._getCounterSignal(id, initial);
+            sig.value = Number(sig.value) + 1;
+            this.setAttribute('counter-value', sig.value);
+        });
+    }
+}
+customElements.define('inc-button', IncButton, { extends: 'button' });
 
-document.addEventListener('click', e => {
-    const btn = e.target.closest('button[is="js-action"]');
-    if (!btn) return;
-    const spec = btn.getAttribute('action');
-    if (!spec) return;
-    const [evt, method, comp] = spec.split(':');
-    if (evt !== 'click') return;
-    const fn = actions[method];
-    if (fn) fn(e, comp);
-});
+class DecButton extends HTMLButtonElement {
+    setCounterSignal(getCounterSignal) {
+        this._getCounterSignal = getCounterSignal;
+    }
+    connectedCallback() {
+        this.addEventListener('click', e => {
+            e.preventDefault();
+            const id = this.getAttribute('counter-id');
+            const initial = this.getAttribute('counter-initial') || 0;
+            if (!this._getCounterSignal || !id) return;
+            const sig = this._getCounterSignal(id, initial);
+            sig.value = Number(sig.value) - 1;
+            this.setAttribute('counter-value', sig.value);
+        });
+    }
+}
+customElements.define('dec-button', DecButton, { extends: 'button' });
+
+class ArtCounterValue extends HTMLParagraphElement {
+    setCounterSignal(getCounterSignal) {
+        this._getCounterSignal = getCounterSignal;
+    }
+    connectedCallback() {
+        const id = this.getAttribute('counter-id');
+        const initial = this.getAttribute('counter-initial') || 0;
+        if (!this._getCounterSignal || !id) return;
+        const sig = this._getCounterSignal(id, initial);
+        this.dispose = effect(() => {
+            this.textContent = String(sig.value);
+        });
+    }
+    disconnectedCallback() {
+        this.dispose?.();
+    }
+}
+customElements.define('art-counter-value', ArtCounterValue, { extends: 'p' });
+
+class JsAction extends HTMLFormElement {
+    setCounterSignal(getCounterSignal) {
+        this._getCounterSignal = getCounterSignal;
+    }
+    connectedCallback() {
+        const id = this.getAttribute('counter-id');
+        const initial = this.getAttribute('counter-initial') || 0;
+        if (!this._getCounterSignal || !id) return;
+        const sig = this._getCounterSignal(id, initial);
+        const doubleValue = computed(() => sig.value * 2);
+        this.dispose = effect(() => {
+            this.setAttribute('counter-value', sig.value);
+            this.setAttribute('double-value', doubleValue.value);
+        });
+    }
+    disconnectedCallback() {
+        this.dispose?.();
+    }
+}
+customElements.define('js-action', JsAction, { extends: 'form' });
 
 class CounterWs extends HTMLElement {
+    setCounterSignal(getCounterSignal) {
+        this._getCounterSignal = getCounterSignal;
+    }
     connectedCallback() {
-        const id = this.getAttribute('uid');
-        if (!id) return;
+        const id = this.getAttribute('counter-id');
+        if (!this._getCounterSignal || !id) return;
+        const sig = this._getCounterSignal(id);
         const socket = new WebSocket(`ws://${location.host}/ws/counter/${id}`);
         socket.addEventListener('message', e => {
             const msg = JSON.parse(e.data);
-            const form = document.getElementById(msg.id);
-            if (form) form.setAttribute('count', msg.count);
+            if (msg.id === id) {
+                sig.value = Number(msg.count);
+            }
         });
     }
 }
 customElements.define('counter-ws', CounterWs);
-
-customElements.define('js-action', class extends HTMLButtonElement {}, { extends: 'button' });
