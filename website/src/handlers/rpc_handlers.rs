@@ -8,7 +8,7 @@ use surrealdb::Surreal;
 use surrealdb::engine::remote::ws::Client as WsClient;
 
 use crate::AppState;
-use crate::handlers::post_handlers::Post;
+use crate::schema::Post;
 
 pub async fn rpc_handler(
     State(app_state): State<Arc<AppState>>,
