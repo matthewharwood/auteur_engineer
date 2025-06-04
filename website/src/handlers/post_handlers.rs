@@ -56,23 +56,34 @@ pub async fn serve_admin_page_index_handler(
 }
 
 
-pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>,  Path(id): Path<String>,) -> impl IntoResponse {
-
+pub async fn serve_admin_page_id_handler(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
     let tera = &app_state.templates;
-    let db   = &app_state.db;
-    let posts_data: Option<Post> = match db.select(("posts", id)).await {
+    let db = &app_state.db;
+    let posts_data: Option<Post> = match db.select(("posts", id.clone())).await {
         Ok(post) => post,
         Err(e) => {
             eprintln!("Database error: {:?}", e);
             return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
         }
     };
-    
+
+    let Some(post) = posts_data else {
+        return (StatusCode::NOT_FOUND, "Post not found").into_response();
+    };
+
+    let page_schema = if post.blocks.is_empty() {
+        schema::default_page_schema()
+    } else {
+        post.blocks.clone()
+    };
+
     let mut context = Context::new();
-    context.insert("post", &posts_data);
-    let page_schema = schema::default_page_schema();
+    context.insert("post", &post);
     context.insert("page_schema", &page_schema);
-    println!("{:?}", posts_data);
+
     match tera.render("admin/posts/[id].html", &context) {
         Ok(html) => Html(html).into_response(),
         Err(err) => {
