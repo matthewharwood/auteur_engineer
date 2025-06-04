@@ -4,62 +4,13 @@ use serde_json::json;
 use std::sync::Arc;
 use axum::extract::Path;
 use axum::response::Html;
-use surrealdb::sql::Thing;
 use tera::Context;
 use crate::AppState;
-use crate::schema::PAGE_SCHEMA;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Post {
-    pub id: Option<Thing>,
-    pub title: Field,
-    pub blocks: Vec<Block>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Block {
-    Header(Header),
-    Footer(Footer),
-    // Ref(BlockRef),
-}
-
-// #[derive(Serialize, Deserialize, PlatSchema)]
-// pub struct BlockRef {
-//     pub post_id:     Thing,
-//     pub block_index: usize,
-// }
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Header {
-    pub content: Field,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Footer {
-    pub copyright: Field,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub enum FormType {
-    InputArea,
-    InputText,
-    InputDate,
-}
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Field {
-    pub label: String,
-    pub hint: String,
-    pub form_type: FormType,
-}
+use crate::schema::{self, Post, Field, FormType};
 
 #[derive(Deserialize, Serialize,Debug)]
 pub struct CreatePost {
     pub title: String,
-}
-#[derive(Deserialize, Serialize, Debug)]
-pub struct PageData {
-    title: Field,
-    blocks: Vec<Block>,
 }
 
 
@@ -119,7 +70,8 @@ pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>,
     
     let mut context = Context::new();
     context.insert("post", &posts_data);
-    context.insert("page_schema", &PAGE_SCHEMA);
+    let page_schema = schema::default_page_schema();
+    context.insert("page_schema", &page_schema);
     println!("{:?}", posts_data);
     match tera.render("admin/posts/[id].html", &context) {
         Ok(html) => Html(html).into_response(),
