@@ -1,4 +1,5 @@
 mod handlers;
+mod schema;
 
 use axum::{
     routing::{get, post},
