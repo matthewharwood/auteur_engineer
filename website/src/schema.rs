@@ -1,56 +1,59 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+use surrealdb::sql::Thing;
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FormType {
     InputArea,
     InputText,
     InputDate,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Field {
-    pub label: &'static str,
-    pub hint: &'static str,
+    pub label: String,
+    pub hint: String,
     pub form_type: FormType,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Header {
     pub content: Field,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Footer {
     pub copyright: Field,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Block {
     Header(Header),
     Footer(Footer),
 }
 
-pub const TITLE_FIELD: Field = Field {
-    label: "Title",
-    hint: "Title of the page",
-    form_type: FormType::InputText,
-};
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Post {
+    pub id: Option<Thing>,
+    pub title: Field,
+    pub blocks: Vec<Block>,
+}
 
-pub const HEADER_BLOCK: Block = Block::Header(Header {
-    content: Field {
-        label: "Header",
-        hint: "",
-        form_type: FormType::InputArea,
-    },
-});
-
-pub const FOOTER_BLOCK: Block = Block::Footer(Footer {
-    copyright: Field {
-        label: "Copyright",
-        hint: "",
-        form_type: FormType::InputText,
-    },
-});
-
-pub const PAGE_SCHEMA: &[Block] = &[HEADER_BLOCK, FOOTER_BLOCK];
+pub fn default_page_schema() -> Vec<Block> {
+    vec![
+        Block::Header(Header {
+            content: Field {
+                label: "Header".to_string(),
+                hint: "".to_string(),
+                form_type: FormType::InputArea,
+            },
+        }),
+        Block::Footer(Footer {
+            copyright: Field {
+                label: "Copyright".to_string(),
+                hint: "".to_string(),
+                form_type: FormType::InputText,
+            },
+        }),
+    ]
+}
 
