@@ -1,4 +1,5 @@
-{% import "macros.html" as forms %}
+{% import "macros.html" as macros %}
+{% import "macros/forms.html" as forms %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -15,8 +16,9 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: var(--font-display);
+            font-family: var(--font-sans);
             background: var(--background-color);
+            color: var(--text-color);
         }
 
         main {
@@ -28,27 +30,55 @@
             border-bottom: 1px solid var(--secondary-color);
             padding: var(--space-2) var(--space-4);
             text-transform: uppercase;
-            a {
-                color: var(--text-color);
-                text-decoration: none;
-            }
         }
+
+        .navigation-bar a {
+            color: var(--text-color);
+            text-decoration: none;
+        }
+
         .preview {
-            width: 66.6%;
-            padding: var(--space-4);
-            background: #222;
+            width: var(--size-2_3);
+            padding: var(--space-6);
+            background: var(--background-color);
+            color: var(--text-color);
         }
+
         .form {
-            width: 33.3%;
-            padding: var(--space-4);
-            background: #666;
+            width: var(--size-1_3);
+            padding: var(--space-6);
+            background: var(--background-color);
+            border-left: 1px solid var(--secondary-color);
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-4);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+
+        button {
+            padding: var(--space-2) var(--space-4);
+            border-radius: 4px;
+            background: var(--text-color);
+            color: var(--background-color);
+            border: 1px solid var(--text-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--background-color);
+            color: var(--text-color);
         }
     </style>
 </head>
 <body>
     <nav class="navigation-bar">
         <a href="/admin/posts/">Auteur</a>
-        {{ forms::theme_toggle_button(text="theme-toggle", class="text") }}
+        {{ macros::theme_toggle_button(text="theme-toggle", class="text") }}
     </nav>
     <main>
         <div class="preview">
@@ -59,14 +89,8 @@
         </div>
         <div class="form">
             <form id="update-post-form">
-                <div class="form-group">
-                    <label for="post-id">ID</label>
-                    <input type="text" id="post-id" value="{{ post.id.id.String }}" disabled />
-                </div>
-                <div class="form-group">
-                    <label for="title">Title</label>
-                    <input type="text" id="title" name="title" value="{{ post.title.label }}" />
-                </div>
+                {{ forms::input(name="post-id", label="ID", value=post.id.id.String, attrs="disabled") }}
+                {{ forms::input(name="title", label="Title", value=post.title.label) }}
 
                 <div id="blocks-container">
                 {# Iterate over the blocks provided by PAGE_SCHEMA #}
