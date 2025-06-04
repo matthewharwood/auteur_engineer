@@ -102,6 +102,8 @@ async fn main() {
             post(handlers::post_handlers::create_post_handler)
                 .get(handlers::post_handlers::get_posts_handler),
         )
+        .route("/counter", get(handlers::counter_handler::page_handler))
+        .route("/api/counter/:id", post(handlers::counter_handler::create_handler))
         .route("/rpc", get(handlers::rpc_handlers::rpc_handler))
         .fallback_service(static_files_service)
         .with_state(app_state);

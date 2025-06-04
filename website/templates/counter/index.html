@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script defer type="module" src="/main.js"></script>
+</head>
+<body>
+  <h1>Counter</h1>
+  <form action="/api/counter/{{data[0].id.id.String }}" method="post" data-uid="{{data[0].id.id.String }}">
+    <button  name="action" is="art-counter-button" art-delta="-1" type="submit" value="dec"  art-uid="{{data[0].id.id.String }}">−</button>
+    <label>
+      <input is="art-counter-value" art-uid="{{data[0].id.id.String }}" type="number" value="0" />
+    </label>
+    <button  name="action" is="art-counter-button" type="submit" value="inc" art-delta="1" art-uid="{{data[0].id.id.String }}">＋</button>
+  </form>
+
+
+  <script type="module">
+      import { signal, effect } from "/signal.js";
+
+      const table = new Map();
+      function useCounter(id, initial) {
+        if (!table.has(id)) {
+          const counter = signal(Number(initial));
+          table.set(id, counter);
+        }
+
+        return table.get(id);
+      }
+      class ArtCounterButton extends HTMLButtonElement {
+        connectedCallback() {
+          this.addEventListener("click", (e) => {
+            e.preventDefault();
+            const id = String(this.getAttribute('art-uid'));
+            const delta = Number(this.getAttribute('art-delta'));
+            if (!id || !delta) return;
+            const sig = useCounter(id);
+            sig.value = Number(sig.value) + delta;
+          });
+        }
+      }
+      class ArtCounterValue extends HTMLInputElement {
+        connectedCallback() {
+          const id = this.getAttribute('art-uid');
+          const data = this.getAttribute('value') || 0;
+          if (!id || !data) return;
+          const sig = useCounter(id, data);
+          this.dispose = effect(() => {
+            this.value = String(sig.value);
+          });
+        }
+        disconnectedCallback() {
+          this.dispose?.();
+        }
+      }
+      customElements.define('art-counter-value', ArtCounterValue, { extends: 'input' });
+      customElements.define('art-counter-button', ArtCounterButton, { extends: 'button' });
+  </script>
+</body>
+</html>

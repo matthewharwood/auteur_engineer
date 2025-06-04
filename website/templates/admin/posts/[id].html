@@ -21,6 +21,7 @@
 
         main {
             height: 100vh;
+            display: flex;
         }
 
         .navigation-bar {
@@ -32,6 +33,16 @@
                 text-decoration: none;
             }
         }
+        .preview {
+            width: 66.6%;
+            padding: var(--space-4);
+            background: #222;
+        }
+        .form {
+            width: 33.3%;
+            padding: var(--space-4);
+            background: #666;
+        }
     </style>
 </head>
 <body>
@@ -40,13 +51,20 @@
         {{ forms::theme_toggle_button(text="theme-toggle", class="text") }}
     </nav>
     <main>
-        <div class="block-add">
-            <select>
-                <option>header</option>
-                <option>footer</option>
-            </select>
-            <button>add block</button>
+        <div class="preview">
+            <div>
+                <h1>Hello World</h1>
+                <p>Lorem Ipsum...</p>
+            </div>
         </div>
+        <div class="form"></div>
     </main>
+    <script type="module">
+        // import { signal, effect } from "/signal.js";
+        class ArtAddBlock extends HTMLElement {
+
+        }
+        customElements.define("art-add-block", ArtAddBlock);
+    </script>
 </body>
 </html>
