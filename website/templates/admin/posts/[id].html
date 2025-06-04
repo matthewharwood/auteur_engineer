@@ -57,7 +57,28 @@
                 <p>Lorem Ipsum...</p>
             </div>
         </div>
-        <div class="form"></div>
+        <div class="form">
+            {# Iterate over the blocks provided by PAGE_SCHEMA #}
+            {% for block in page_schema %}
+                {% if block.Header is defined %}
+                    {% set field = block.Header.content %}
+                {% elif block.Footer is defined %}
+                    {% set field = block.Footer.copyright %}
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="{{ field.label | slugify }}">{{ field.label }}</label>
+
+                    {% if field.form_type == "InputArea" %}
+                        <textarea id="{{ field.label | slugify }}" name="{{ field.label | slugify }}" placeholder="{{ field.hint }}"></textarea>
+                    {% elif field.form_type == "InputText" %}
+                        <input type="text" id="{{ field.label | slugify }}" name="{{ field.label | slugify }}" placeholder="{{ field.hint }}" />
+                    {% elif field.form_type == "InputDate" %}
+                        <input type="date" id="{{ field.label | slugify }}" name="{{ field.label | slugify }}" />
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
     </main>
     <script type="module">
         // import { signal, effect } from "/signal.js";
