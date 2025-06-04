@@ -7,6 +7,7 @@ use axum::response::Html;
 use surrealdb::sql::Thing;
 use tera::Context;
 use crate::AppState;
+use crate::schema::PAGE_SCHEMA;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Post {
@@ -118,6 +119,7 @@ pub async fn serve_admin_page_id_handler(State(app_state): State<Arc<AppState>>,
     
     let mut context = Context::new();
     context.insert("post", &posts_data);
+    context.insert("page_schema", &PAGE_SCHEMA);
     println!("{:?}", posts_data);
     match tera.render("admin/posts/[id].html", &context) {
         Ok(html) => Html(html).into_response(),
