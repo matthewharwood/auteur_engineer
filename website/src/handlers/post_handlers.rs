@@ -176,3 +176,30 @@ pub async fn get_posts_handler(State(app_state): State<Arc<AppState>>) -> impl I
             .into_response(),
     }
 }
+
+pub async fn update_post_handler(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(payload): Json<Post>,
+) -> impl IntoResponse {
+    let db = &app_state.db;
+
+    let result: Result<Option<Post>, _> = db
+        .update(("posts", id))
+        .content(payload)
+        .await;
+
+    match result {
+        Ok(Some(post)) => (StatusCode::OK, Json(post)).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "Post not found" })),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        )
+            .into_response(),
+    }
+}
