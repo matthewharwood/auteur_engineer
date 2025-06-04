@@ -58,42 +58,97 @@
             </div>
         </div>
         <div class="form">
-            {# Iterate over the blocks provided by PAGE_SCHEMA #}
-            {% for block in page_schema %}
-                {% if block.Header is defined %}
-                    {% set field = block.Header.content %}
-                {% elif block.Footer is defined %}
-                    {% set field = block.Footer.copyright %}
-                {% endif %}
+            <form id="update-post-form">
+                <div class="form-group">
+                    <label for="post-id">ID</label>
+                    <input type="text" id="post-id" value="{{ post.id.id.String }}" disabled />
+                </div>
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="{{ post.title.label }}" />
+                </div>
 
-            <div class="form-group">
-                <label for="{{ field.label | slugify }}">{{ field.label }}</label>
+                <div id="blocks-container">
+                {# Iterate over the blocks provided by PAGE_SCHEMA #}
+                {% for block in page_schema %}
+                    {% if block.Header is defined %}
+                        <div class="form-group block-group" data-type="Header">
+                            <label for="header-{{ loop.index }}">Header</label>
+                            <textarea id="header-{{ loop.index }}">{{ block.Header.content.label }}</textarea>
+                        </div>
+                    {% elif block.Footer is defined %}
+                        <div class="form-group block-group" data-type="Footer">
+                            <label for="footer-{{ loop.index }}">Footer</label>
+                            <input type="text" id="footer-{{ loop.index }}" value="{{ block.Footer.copyright.label }}" />
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
 
-                {% if field.form_type == "InputArea" %}
-                <textarea id="{{ field.label | slugify }}" name="{{ field.label | slugify }}" placeholder="{{ field.hint }}"></textarea>
-                {% elif field.form_type == "InputText" %}
-                <input type="text" id="{{ field.label | slugify }}" name="{{ field.label | slugify }}" placeholder="{{ field.hint }}" />
-                {% elif field.form_type == "InputDate" %}
-                <input type="date" id="{{ field.label | slugify }}" name="{{ field.label | slugify }}" />
-                {% endif %}
-            </div>
-            {% endfor %}
+                <div class="form-group">
+                    <label for="add-block-select">Add Block</label>
+                    <select id="add-block-select">
+                        <option value="Header">Header</option>
+                        <option value="Footer">Footer</option>
+                    </select>
+                    <button type="button" id="add-block-btn">Add</button>
+                </div>
+
+                <button type="submit">Publish</button>
+            </form>
         </div>
     </main>
     <script type="module">
-        // import { signal, effect } from "/signal.js";
+        const postId = "{{ post.id.id.String }}";
         const form = document.getElementById('update-post-form');
+        const blocksContainer = document.getElementById('blocks-container');
+        const addBtn = document.getElementById('add-block-btn');
+        const select = document.getElementById('add-block-select');
+        const ws = new WebSocket(`ws://${location.host}/rpc`);
+
+        addBtn.addEventListener('click', () => {
+            const type = select.value;
+            let group;
+            if (type === 'Header') {
+                group = document.createElement('div');
+                group.className = 'form-group block-group';
+                group.dataset.type = 'Header';
+                group.innerHTML = `<label>Header</label><textarea></textarea>`;
+            } else if (type === 'Footer') {
+                group = document.createElement('div');
+                group.className = 'form-group block-group';
+                group.dataset.type = 'Footer';
+                group.innerHTML = `<label>Footer</label><input type="text" />`;
+            }
+            if (group) blocksContainer.appendChild(group);
+        });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {};
-            form.querySelectorAll('input[name], textarea[name]').forEach(el => {
-                data[el.name] = el.value;
+            const blocks = [];
+            blocksContainer.querySelectorAll('.block-group').forEach(el => {
+                const type = el.dataset.type;
+                if (type === 'Header') {
+                    blocks.push({
+                        Header: { content: { label: el.querySelector('textarea').value, hint: '', form_type: 'InputArea' } }
+                    });
+                } else if (type === 'Footer') {
+                    blocks.push({
+                        Footer: { copyright: { label: el.querySelector('input').value, hint: '', form_type: 'InputText' } }
+                    });
+                }
             });
+
+            const payload = {
+                title: { label: document.getElementById('title').value, hint: '', form_type: 'InputText' },
+                blocks
+            };
+
             try {
-                const res = await fetch('/api/posts/{{ post.id.id.String }}', {
+                const res = await fetch(`/api/posts/${postId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
@@ -104,14 +159,12 @@
             }
         });
 
-        class ArtAddBlock extends HTMLElement {
-
-        }
-        customElements.define("art-add-block", ArtAddBlock);
-        class ArtAddBlock extends HTMLElement {
-
-        }
-        customElements.define("art-add-block", ArtAddBlock);
+        ws.onmessage = evt => {
+            const [action, post] = JSON.parse(evt.data);
+            if (post.id.id.String === postId && action === 'Update') {
+                location.reload();
+            }
+        };
     </script>
 </body>
 </html>
