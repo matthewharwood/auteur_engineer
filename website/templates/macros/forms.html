@@ -1,0 +1,13 @@
+{% macro input(name, label, type="text", value="", placeholder="", attrs="") %}
+<div class="form-group">
+    <label for="{{ name }}">{{ label }}</label>
+    <input type="{{ type }}" name="{{ name }}" id="{{ name }}" value="{{ value }}" placeholder="{{ placeholder }}" {{ attrs | safe }} />
+</div>
+{% endmacro %}
+
+{% macro textarea(name, label, value="", placeholder="", rows="5", attrs="") %}
+<div class="form-group">
+    <label for="{{ name }}">{{ label }}</label>
+    <textarea name="{{ name }}" id="{{ name }}" placeholder="{{ placeholder }}" rows="{{ rows }}" {{ attrs | safe }}>{{ value }}</textarea>
+</div>
+{% endmacro %}
