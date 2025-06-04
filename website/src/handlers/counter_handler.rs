@@ -1,17 +1,14 @@
 use std::sync::Arc;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::{Form, Json};
+use axum::{Form};
 use axum::response::{Html, IntoResponse};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use surrealdb::sql::Thing;
 use tera::{Context};
-use plat_schema_macros::PlatSchema;
 use crate::AppState;
-use crate::handlers::post_handlers::{Field, FormType, Post};
 
-#[derive(Serialize, Deserialize, PlatSchema, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Counter {
     pub id: Option<Thing>,
     pub count: i32,

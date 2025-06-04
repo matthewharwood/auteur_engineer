@@ -1,6 +1,4 @@
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
-use plat_schema::Schema;
-use plat_schema_macros::PlatSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
@@ -10,14 +8,14 @@ use surrealdb::sql::Thing;
 use tera::Context;
 use crate::AppState;
 
-#[derive(Serialize, Deserialize, PlatSchema, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Post {
     pub id: Option<Thing>,
     pub title: Field,
     pub blocks: Vec<Block>,
 }
 
-#[derive(Serialize, Deserialize, PlatSchema, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Block {
     Header(Header),
     Footer(Footer),
@@ -30,12 +28,12 @@ pub enum Block {
 //     pub block_index: usize,
 // }
 
-#[derive(Serialize, Deserialize, PlatSchema, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Header {
     pub content: Field,
 }
 
-#[derive(Serialize, Deserialize, PlatSchema, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Footer {
     pub copyright: Field,
 }
@@ -46,7 +44,7 @@ pub enum FormType {
     InputText,
     InputDate,
 }
-#[derive(Serialize, Deserialize, PlatSchema, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Field {
     pub label: String,
     pub hint: String,
