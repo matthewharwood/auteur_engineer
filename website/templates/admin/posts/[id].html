@@ -82,7 +82,7 @@
         {{ macros::theme_toggle_button(text="theme-toggle", class="text") }}
     </nav>
     <main>
-        <div class="preview" id="preview">
+        <div class="preview" is="art-post-preview" art-uid="{{ post.id.id.String }}">
             {% for block in page_schema %}
                 {% if block.Header is defined %}
                     {{ blocks::header(text=block.Header.content.label) }}
@@ -92,23 +92,20 @@
             {% endfor %}
         </div>
         <div class="form">
-            <form id="update-post-form">
+            <form is="art-post-form"
+                  art-uid="{{ post.id.id.String }}"
+                  art-title="{{ post.title.label }}"
+                  data-page-schema='{{ page_schema | json_encode | escape }}'>
                 {{ forms::input(name="post-id", label="ID", value=post.id.id.String, attrs="disabled") }}
                 {{ forms::input(name="title", label="Title", value=post.title.label) }}
 
-                <div id="blocks-container">
+                <div data-blocks>
                 {# Iterate over the blocks provided by PAGE_SCHEMA #}
                 {% for block in page_schema %}
                     {% if block.Header is defined %}
-                        <div class="form-group block-group" data-type="Header">
-                            <label for="header-{{ loop.index }}">Header</label>
-                            <textarea id="header-{{ loop.index }}">{{ block.Header.content.label }}</textarea>
-                        </div>
+                        <div is="art-block-group" class="form-group" art-type="Header" art-label="{{ block.Header.content.label }}"></div>
                     {% elif block.Footer is defined %}
-                        <div class="form-group block-group" data-type="Footer">
-                            <label for="footer-{{ loop.index }}">Footer</label>
-                            <input type="text" id="footer-{{ loop.index }}" value="{{ block.Footer.copyright.label }}" />
-                        </div>
+                        <div is="art-block-group" class="form-group" art-type="Footer" art-label="{{ block.Footer.copyright.label }}"></div>
                     {% endif %}
                 {% endfor %}
                 </div>
@@ -119,10 +116,10 @@
                         <option value="Header">Header</option>
                         <option value="Footer">Footer</option>
                     </select>
-                    <button type="button" id="add-block-btn">Add</button>
+                    <button type="button" is="art-add-block">Add</button>
                 </div>
 
-                <button type="submit">Publish</button>
+                <button type="submit" is="art-submit-post">Publish</button>
             </form>
         </div>
     </main>
@@ -132,106 +129,158 @@
     <template id="footer-preview-template">
         {{ blocks::footer(text="") | safe }}
     </template>
-    <script id="page-data" type="application/json">{{ page_schema | json_encode | safe }}</script>
     <script type="module">
         import { signal, effect } from '/signal.js';
 
-        const postId = "{{ post.id.id.String }}";
-        const form = document.getElementById('update-post-form');
-        const blocksContainer = document.getElementById('blocks-container');
-        const addBtn = document.getElementById('add-block-btn');
-        const select = document.getElementById('add-block-select');
-        const preview = document.getElementById('preview');
-        const headerTpl = document.getElementById('header-preview-template').content;
-        const footerTpl = document.getElementById('footer-preview-template').content;
-        const initial = JSON.parse(document.getElementById('page-data').textContent);
-
-        const blocks = signal(initial.map(b => {
-            if (b.Header) return { type: 'Header', label: b.Header.content.label };
-            if (b.Footer) return { type: 'Footer', label: b.Footer.copyright.label };
-        }));
-
-        function attachInput(el, index) {
-            const input = el.querySelector('textarea, input');
-            input.addEventListener('input', e => {
-                const arr = blocks.value.slice();
-                arr[index].label = e.target.value;
-                blocks.value = arr;
-            });
+        const store = new Map();
+        function usePostState(id, title = '', blocks = []) {
+            if (!store.has(id)) {
+                store.set(id, {
+                    title: signal(title),
+                    blocks: signal(blocks)
+                });
+            }
+            return store.get(id);
         }
 
-        // attach listeners to existing groups
-        blocksContainer.querySelectorAll('.block-group').forEach((el, idx) => attachInput(el, idx));
-
-        addBtn.addEventListener('click', () => {
-            const type = select.value;
-            let group;
-            if (type === 'Header') {
-                group = document.createElement('div');
-                group.className = 'form-group block-group';
-                group.dataset.type = 'Header';
-                group.innerHTML = `<label>Header</label><textarea></textarea>`;
-            } else if (type === 'Footer') {
-                group = document.createElement('div');
-                group.className = 'form-group block-group';
-                group.dataset.type = 'Footer';
-                group.innerHTML = `<label>Footer</label><input type="text" />`;
-            }
-            if (group) {
-                blocksContainer.appendChild(group);
-                blocks.value = [...blocks.value, { type, label: '' }];
-                attachInput(group, blocks.value.length - 1);
-            }
-        });
-
-        effect(() => {
-            preview.innerHTML = '';
-            blocks.value.forEach(b => {
-                let frag;
-                if (b.type === 'Header') {
-                    frag = headerTpl.cloneNode(true);
-                    frag.querySelector('h2').textContent = b.label;
-                } else if (b.type === 'Footer') {
-                    frag = footerTpl.cloneNode(true);
-                    frag.querySelector('p').textContent = `\u00A9 ${b.label}`;
+        class ArtBlockGroup extends HTMLDivElement {
+            connectedCallback() {
+                const uid = this.getAttribute('art-uid');
+                const type = this.getAttribute('art-type');
+                const label = this.getAttribute('art-label') || '';
+                const state = usePostState(uid);
+                const index = Array.from(this.parentElement.children).indexOf(this);
+                this.innerHTML = '';
+                const labelEl = document.createElement('label');
+                labelEl.textContent = type;
+                const input = type === 'Header' ? document.createElement('textarea') : document.createElement('input');
+                if (type !== 'Header') input.type = 'text';
+                this.append(labelEl, input);
+                if (state.blocks.value.length <= index) {
+                    state.blocks.value = [...state.blocks.value, { type, label }];
                 }
-                if (frag) preview.appendChild(frag);
-            });
-        });
-
-        form.addEventListener('submit', async e => {
-            e.preventDefault();
-            const payload = {
-                title: { label: document.getElementById('title').value, hint: '', form_type: 'InputText' },
-                blocks: blocks.value.map(b => {
-                    if (b.type === 'Header') {
-                        return { Header: { content: { label: b.label, hint: '', form_type: 'InputArea' } } };
-                    }
-                    return { Footer: { copyright: { label: b.label, hint: '', form_type: 'InputText' } } };
-                })
-            };
-            try {
-                const res = await fetch(`/api/posts/${postId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                input.value = state.blocks.value[index]?.label ?? label;
+                this._listener = e => {
+                    const arr = state.blocks.value.slice();
+                    arr[index] = { type, label: e.target.value };
+                    state.blocks.value = arr;
+                };
+                input.addEventListener('input', this._listener);
+                this._dispose = effect(() => {
+                    const b = state.blocks.value[index];
+                    if (b) input.value = b.label;
                 });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    console.error('Failed to update', err);
-                }
-            } catch (err) {
-                console.error(err);
             }
-        });
+            disconnectedCallback() {
+                this._dispose?.();
+            }
+        }
+        customElements.define('art-block-group', ArtBlockGroup, { extends: 'div' });
 
-        const ws = new WebSocket(`ws://${location.host}/rpc`);
-        ws.onmessage = evt => {
-            const [action, post] = JSON.parse(evt.data);
-            if (post.id.id.String === postId && action === 'Update') {
-                location.reload();
+        class ArtPostPreview extends HTMLDivElement {
+            connectedCallback() {
+                const uid = this.getAttribute('art-uid');
+                const { blocks } = usePostState(uid);
+                const doc = this.ownerDocument;
+                const headerTpl = doc.getElementById('header-preview-template').content;
+                const footerTpl = doc.getElementById('footer-preview-template').content;
+                this._dispose = effect(() => {
+                    this.innerHTML = '';
+                    blocks.value.forEach(b => {
+                        let frag;
+                        if (b.type === 'Header') {
+                            frag = headerTpl.cloneNode(true);
+                            frag.querySelector('h2').textContent = b.label;
+                        } else if (b.type === 'Footer') {
+                            frag = footerTpl.cloneNode(true);
+                            frag.querySelector('p').textContent = `\u00A9 ${b.label}`;
+                        }
+                        if (frag) this.appendChild(frag);
+                    });
+                });
             }
-        };
+            disconnectedCallback() {
+                this._dispose?.();
+            }
+        }
+        customElements.define('art-post-preview', ArtPostPreview, { extends: 'div' });
+
+        class ArtPostForm extends HTMLFormElement {
+            connectedCallback() {
+                const uid = this.getAttribute('art-uid');
+                const title = this.getAttribute('art-title') || '';
+                const schema = JSON.parse(this.dataset.pageSchema || '[]');
+                const initialBlocks = schema.map(b =>
+                    b.Header ? { type: 'Header', label: b.Header.content.label } : { type: 'Footer', label: b.Footer.copyright.label }
+                );
+                const state = usePostState(uid, title, initialBlocks);
+
+                this.titleInput = this.querySelector('input[name="title"]');
+                this.blocksContainer = this.querySelector('[data-blocks]');
+                this.addBtn = this.querySelector('button[is="art-add-block"]');
+                this.select = this.querySelector('select');
+
+                Array.from(this.blocksContainer.children).forEach(ch => ch.setAttribute('art-uid', uid));
+
+                this.titleInput.addEventListener('input', () => {
+                    state.title.value = this.titleInput.value;
+                });
+
+                this.addBtn.addEventListener('click', () => {
+                    const type = this.select.value;
+                    const div = document.createElement('div');
+                    div.setAttribute('is', 'art-block-group');
+                    div.setAttribute('art-type', type);
+                    div.setAttribute('art-uid', uid);
+                    div.className = 'form-group';
+                    this.blocksContainer.appendChild(div);
+                    state.blocks.value = [...state.blocks.value, { type, label: '' }];
+                });
+
+                this._submit = async e => {
+                    e.preventDefault();
+                    const payload = {
+                        title: { label: state.title.value, hint: '', form_type: 'InputText' },
+                        blocks: state.blocks.value.map(b =>
+                            b.type === 'Header'
+                                ? { Header: { content: { label: b.label, hint: '', form_type: 'InputArea' } } }
+                                : { Footer: { copyright: { label: b.label, hint: '', form_type: 'InputText' } } }
+                        )
+                    };
+                    try {
+                        const res = await fetch(`/api/posts/${uid}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!res.ok) {
+                            console.error('Failed to update', await res.json().catch(() => ({})));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                };
+                this.addEventListener('submit', this._submit);
+
+                this.ws = new WebSocket(`ws://${location.host}/rpc`);
+                this.ws.addEventListener('message', evt => {
+                    const [action, post] = JSON.parse(evt.data);
+                    if (post.id.id.String === uid && action === 'Update') {
+                        location.reload();
+                    }
+                });
+            }
+            disconnectedCallback() {
+                this.ws?.close();
+            }
+        }
+        customElements.define('art-post-form', ArtPostForm, { extends: 'form' });
+
+        class ArtAddBlock extends HTMLButtonElement {}
+        customElements.define('art-add-block', ArtAddBlock, { extends: 'button' });
+
+        class ArtSubmitPost extends HTMLButtonElement {}
+        customElements.define('art-submit-post', ArtSubmitPost, { extends: 'button' });
     </script>
 </body>
 </html>
