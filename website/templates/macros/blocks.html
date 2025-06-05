@@ -1,4 +1,4 @@
-{% macro header(text) %}
+{% macro header(text="text") %}
 <div class="header-block">
   <div class="header-inner">
     <h2>{{ text }}</h2>
@@ -6,7 +6,7 @@
 </div>
 {% endmacro %}
 
-{% macro footer(text) %}
+{% macro footer(text="text") %}
 <footer class="footer-block">
   <div class="footer-inner">
     <p>&copy; {{ text }}</p>

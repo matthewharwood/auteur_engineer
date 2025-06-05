@@ -85,9 +85,9 @@
         <div class="preview" id="preview">
             {% for block in page_schema %}
                 {% if block.Header is defined %}
-                    {{ blocks::header(block.Header.content.label) }}
+                    {{ blocks::header(text=block.Header.content.label) }}
                 {% elif block.Footer is defined %}
-                    {{ blocks::footer(block.Footer.copyright.label) }}
+                    {{ blocks::footer(text=block.Footer.copyright.label) }}
                 {% endif %}
             {% endfor %}
         </div>
