@@ -1,5 +1,6 @@
 {% import "macros.html" as macros %}
 {% import "macros/forms.html" as forms %}
+{% import "macros/blocks.html" as blocks %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -81,11 +82,14 @@
         {{ macros::theme_toggle_button(text="theme-toggle", class="text") }}
     </nav>
     <main>
-        <div class="preview">
-            <div>
-                <h1>Hello World</h1>
-                <p>Lorem Ipsum...</p>
-            </div>
+        <div class="preview" id="preview">
+            {% for block in page_schema %}
+                {% if block.Header is defined %}
+                    {{ blocks::header(text=block.Header.content.label) }}
+                {% elif block.Footer is defined %}
+                    {{ blocks::footer(text=block.Footer.copyright.label) }}
+                {% endif %}
+            {% endfor %}
         </div>
         <div class="form">
             <form id="update-post-form">
@@ -122,13 +126,42 @@
             </form>
         </div>
     </main>
+    <template id="header-preview-template">
+        {{ blocks::header(text="") | safe }}
+    </template>
+    <template id="footer-preview-template">
+        {{ blocks::footer(text="") | safe }}
+    </template>
+    <script id="page-data" type="application/json">{{ page_schema | json_encode | safe }}</script>
     <script type="module">
+        import { signal, effect } from '/signal.js';
+
         const postId = "{{ post.id.id.String }}";
         const form = document.getElementById('update-post-form');
         const blocksContainer = document.getElementById('blocks-container');
         const addBtn = document.getElementById('add-block-btn');
         const select = document.getElementById('add-block-select');
-        const ws = new WebSocket(`ws://${location.host}/rpc`);
+        const preview = document.getElementById('preview');
+        const headerTpl = document.getElementById('header-preview-template').content;
+        const footerTpl = document.getElementById('footer-preview-template').content;
+        const initial = JSON.parse(document.getElementById('page-data').textContent);
+
+        const blocks = signal(initial.map(b => {
+            if (b.Header) return { type: 'Header', label: b.Header.content.label };
+            if (b.Footer) return { type: 'Footer', label: b.Footer.copyright.label };
+        }));
+
+        function attachInput(el, index) {
+            const input = el.querySelector('textarea, input');
+            input.addEventListener('input', e => {
+                const arr = blocks.value.slice();
+                arr[index].label = e.target.value;
+                blocks.value = arr;
+            });
+        }
+
+        // attach listeners to existing groups
+        blocksContainer.querySelectorAll('.block-group').forEach((el, idx) => attachInput(el, idx));
 
         addBtn.addEventListener('click', () => {
             const type = select.value;
@@ -144,30 +177,39 @@
                 group.dataset.type = 'Footer';
                 group.innerHTML = `<label>Footer</label><input type="text" />`;
             }
-            if (group) blocksContainer.appendChild(group);
+            if (group) {
+                blocksContainer.appendChild(group);
+                blocks.value = [...blocks.value, { type, label: '' }];
+                attachInput(group, blocks.value.length - 1);
+            }
         });
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const blocks = [];
-            blocksContainer.querySelectorAll('.block-group').forEach(el => {
-                const type = el.dataset.type;
-                if (type === 'Header') {
-                    blocks.push({
-                        Header: { content: { label: el.querySelector('textarea').value, hint: '', form_type: 'InputArea' } }
-                    });
-                } else if (type === 'Footer') {
-                    blocks.push({
-                        Footer: { copyright: { label: el.querySelector('input').value, hint: '', form_type: 'InputText' } }
-                    });
+        effect(() => {
+            preview.innerHTML = '';
+            blocks.value.forEach(b => {
+                let frag;
+                if (b.type === 'Header') {
+                    frag = headerTpl.cloneNode(true);
+                    frag.querySelector('h2').textContent = b.label;
+                } else if (b.type === 'Footer') {
+                    frag = footerTpl.cloneNode(true);
+                    frag.querySelector('p').textContent = `\u00A9 ${b.label}`;
                 }
+                if (frag) preview.appendChild(frag);
             });
+        });
 
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
             const payload = {
                 title: { label: document.getElementById('title').value, hint: '', form_type: 'InputText' },
-                blocks
+                blocks: blocks.value.map(b => {
+                    if (b.type === 'Header') {
+                        return { Header: { content: { label: b.label, hint: '', form_type: 'InputArea' } } };
+                    }
+                    return { Footer: { copyright: { label: b.label, hint: '', form_type: 'InputText' } } };
+                })
             };
-
             try {
                 const res = await fetch(`/api/posts/${postId}`, {
                     method: 'POST',
@@ -183,6 +225,7 @@
             }
         });
 
+        const ws = new WebSocket(`ws://${location.host}/rpc`);
         ws.onmessage = evt => {
             const [action, post] = JSON.parse(evt.data);
             if (post.id.id.String === postId && action === 'Update') {
