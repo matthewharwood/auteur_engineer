@@ -107,14 +107,7 @@
                 {% endfor %}
                 </div>
 
-                <div class="form-group">
-                    <label for="add-block-select">Add Block</label>
-                    <select id="add-block-select" is="art-block-type-select">
-                        <option value="Header">Header</option>
-                        <option value="Footer">Footer</option>
-                    </select>
-                    <button type="button" is="art-add-block-btn">Add</button>
-                </div>
+                {{blocks::add_block_btn()}}
 
                 <button type="submit">Publish</button>
             </form>
@@ -141,24 +134,10 @@
     <post-ws-listener art-uid="{{ post.id.id.String }}"></post-ws-listener>
     <script id="page-data" type="application/json">{{ page_schema | json_encode | safe }}</script>
     <script type="module">
-        import { signal, effect } from '/signal.js';
-        const table = new Map();
+        import {  signal, effect } from '/signal.js';
+        import { useStore } from '/use_store.js';
 
-        export function useStore(id, initial) {
-            if (!table.has(id)) {
-                table.set(id, signal(initial));
-            }
-            return table.get(id);
-        }
-        class ArtBlockTypeSelect extends HTMLSelectElement {
-            connectedCallback() {
-                this.signal = useStore('block-type', this.value);
-                this.addEventListener('change', () => {
-                    this.signal.value = this.value;
-                });
-            }
-        }
-        customElements.define('art-block-type-select', ArtBlockTypeSelect, { extends: 'select' });
+
         class ArtPostForm extends HTMLFormElement {
             constructor() {
                 super();
