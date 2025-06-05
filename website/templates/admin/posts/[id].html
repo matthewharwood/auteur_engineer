@@ -45,7 +45,7 @@
             color: var(--text-color);
         }
 
-        .form {
+        .author-form {
             width: var(--size-1_3);
             padding: var(--space-6);
             background: var(--background-color);
@@ -91,8 +91,8 @@
                 {% endif %}
             {% endfor %}
         </div>
-        <div class="form">
-            <form id="update-post-form">
+        <div class="author-form">
+            <form is="art-post-form" art-uid="{{ post.id.id.String }}">
                 {{ forms::input(name="post-id", label="ID", value=post.id.id.String, attrs="disabled") }}
                 {{ forms::input(name="title", label="Title", value=post.title.label) }}
 
@@ -119,7 +119,7 @@
                         <option value="Header">Header</option>
                         <option value="Footer">Footer</option>
                     </select>
-                    <button type="button" id="add-block-btn">Add</button>
+                    <button type="button" is="art-add-block-btn">Add</button>
                 </div>
 
                 <button type="submit">Publish</button>
@@ -132,19 +132,120 @@
     <template id="footer-preview-template">
         {{ blocks::footer(text="") | safe }}
     </template>
+    <template id="header-form-template">
+        <div class="form-group block-group" data-type="Header">
+            <label>Header</label>
+            <textarea is="art-block-input"></textarea>
+        </div>
+    </template>
+    <template id="footer-form-template">
+        <div class="form-group block-group" data-type="Footer">
+            <label>Footer</label>
+            <input is="art-block-input" type="text" />
+        </div>
+    </template>
+    <post-ws-listener art-uid="{{ post.id.id.String }}"></post-ws-listener>
     <script id="page-data" type="application/json">{{ page_schema | json_encode | safe }}</script>
     <script type="module">
         import { signal, effect } from '/signal.js';
+        const table = new Map();
 
+        export function useStore(id, initial) {
+            if (!table.has(id)) {
+                table.set(id, signal(initial));
+            }
+            return table.get(id);
+        }
+        class ArtBlockTypeSelect extends HTMLSelectElement {
+            connectedCallback() {
+                this.signal = useStore('block-type', this.value);
+                this.addEventListener('change', () => {
+                    this.signal.value = this.value;
+                });
+            }
+        }
+        customElements.define('art-block-type-select', ArtBlockTypeSelect, { extends: 'select' });
+        class ArtPostForm extends HTMLFormElement {
+            constructor() {
+                super();
+            }
+            connectedCallback() {
+                this.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const payload = {
+                        title: { label: document.getElementById('title').value, hint: '', form_type: 'InputText' },
+                        blocks: blocks.value.map(b => {
+                            if (b.type === 'Header') {
+                                return { Header: { content: { label: b.label, hint: '', form_type: 'InputArea' } } };
+                            }
+                            return { Footer: { copyright: { label: b.label, hint: '', form_type: 'InputText' } } };
+                        })
+                    };
+                    try {
+                        const res = await fetch(`/api/posts/${this.getAttribute("art-uid")}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            console.error('Failed to update', err);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                });
+            }
+        }
+        customElements.define('art-post-form', ArtPostForm, { extends: 'form' });
+        class ArtAddBlockBtn extends HTMLButtonElement {
+            connectedCallback() {
+                const blockTypeSignal = useStore('block-type', 'Header');
+
+                this.addEventListener('click', () => {
+                    const type = blockTypeSignal.value;
+                    const tplId = `${type.toLowerCase()}-form-template`;
+                    const tpl = document.getElementById(tplId);
+
+                    if (!tpl) return;
+
+                    const clone = tpl.content.cloneNode(true);
+                    const el = this.form.querySelector('#blocks-container');
+                    const index = blocks.value.length;
+
+                    const input = clone.querySelector('[is="art-block-input"]');
+                    if (input) {
+                        input.dataset.index = index;
+                        useStore(`block-${index}`, ''); // optional: for advanced reactivity
+                        attachInput(clone, index); // ✅ add this line so typing updates preview
+                    }
+
+                    el.appendChild(clone);
+                    blocks.value = [...blocks.value, { type, label: '' }];
+                });
+            }
+        }
+        customElements.define('art-add-block-btn', ArtAddBlockBtn, { extends: 'button' });
         const postId = "{{ post.id.id.String }}";
-        const form = document.getElementById('update-post-form');
+
         const blocksContainer = document.getElementById('blocks-container');
-        const addBtn = document.getElementById('add-block-btn');
-        const select = document.getElementById('add-block-select');
+
+
         const preview = document.getElementById('preview');
         const headerTpl = document.getElementById('header-preview-template').content;
         const footerTpl = document.getElementById('footer-preview-template').content;
-        const initial = JSON.parse(document.getElementById('page-data').textContent);
+        let initial = [];
+        try {
+            const raw = document.getElementById('page-data')?.textContent;
+            if (raw) {
+                initial = JSON.parse(raw);
+            } else {
+                console.warn('No page-data element found or it has no content.');
+            }
+        } catch (err) {
+            console.error('Failed to parse page-data JSON:', err);
+            initial = []; // fallback
+        }
 
         const blocks = signal(initial.map(b => {
             if (b.Header) return { type: 'Header', label: b.Header.content.label };
@@ -163,27 +264,6 @@
         // attach listeners to existing groups
         blocksContainer.querySelectorAll('.block-group').forEach((el, idx) => attachInput(el, idx));
 
-        addBtn.addEventListener('click', () => {
-            const type = select.value;
-            let group;
-            if (type === 'Header') {
-                group = document.createElement('div');
-                group.className = 'form-group block-group';
-                group.dataset.type = 'Header';
-                group.innerHTML = `<label>Header</label><textarea></textarea>`;
-            } else if (type === 'Footer') {
-                group = document.createElement('div');
-                group.className = 'form-group block-group';
-                group.dataset.type = 'Footer';
-                group.innerHTML = `<label>Footer</label><input type="text" />`;
-            }
-            if (group) {
-                blocksContainer.appendChild(group);
-                blocks.value = [...blocks.value, { type, label: '' }];
-                attachInput(group, blocks.value.length - 1);
-            }
-        });
-
         effect(() => {
             preview.innerHTML = '';
             blocks.value.forEach(b => {
@@ -198,40 +278,36 @@
                 if (frag) preview.appendChild(frag);
             });
         });
-
-        form.addEventListener('submit', async e => {
-            e.preventDefault();
-            const payload = {
-                title: { label: document.getElementById('title').value, hint: '', form_type: 'InputText' },
-                blocks: blocks.value.map(b => {
-                    if (b.type === 'Header') {
-                        return { Header: { content: { label: b.label, hint: '', form_type: 'InputArea' } } };
-                    }
-                    return { Footer: { copyright: { label: b.label, hint: '', form_type: 'InputText' } } };
-                })
-            };
-            try {
-                const res = await fetch(`/api/posts/${postId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    console.error('Failed to update', err);
+        class PostWsListener extends HTMLElement {
+            connectedCallback() {
+                const postId = this.getAttribute('art-uid');
+                if (!postId) {
+                    console.warn('<post-ws-listener> requires a post-id attribute');
+                    return;
                 }
-            } catch (err) {
-                console.error(err);
-            }
-        });
 
-        const ws = new WebSocket(`ws://${location.host}/rpc`);
-        ws.onmessage = evt => {
-            const [action, post] = JSON.parse(evt.data);
-            if (post.id.id.String === postId && action === 'Update') {
-                location.reload();
+                this.ws = new WebSocket(`ws://${location.host}/rpc`);
+                this.ws.onmessage = evt => {
+                    try {
+                        const [action, post] = JSON.parse(evt.data);
+                        if (action === 'Update' && post?.id?.id?.String === postId) {
+                            location.reload();
+                        }
+                    } catch (err) {
+                        console.error('WebSocket message parsing error:', err);
+                    }
+                };
             }
-        };
+
+            disconnectedCallback() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+            }
+        }
+
+        customElements.define('post-ws-listener', PostWsListener);
+
     </script>
 </body>
 </html>
