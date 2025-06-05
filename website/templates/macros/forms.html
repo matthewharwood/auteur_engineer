@@ -11,3 +11,18 @@
     <textarea name="{{ name }}" id="{{ name }}" placeholder="{{ placeholder }}" rows="{{ rows }}" {{ attrs | safe }}>{{ value }}</textarea>
 </div>
 {% endmacro %}
+
+
+{% macro header_textarea(index, label) %}
+<div class="form-group block-group" data-type="Header">
+    <label for="header-{{ index }}">Header</label>
+    <textarea id="header-{{ index }}">{{label}}</textarea>
+</div>
+{% endmacro %}
+
+{% macro footer_input(index, label) %}
+<div class="form-group block-group" data-type="Footer">
+    <label for="footer-{{ index }}">Footer</label>
+    <input type="text" id="footer-{{ index }}" value="{{ label }}" />
+</div>
+{% endmacro %}

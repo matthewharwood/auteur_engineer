@@ -100,22 +100,16 @@
                 {# Iterate over the blocks provided by PAGE_SCHEMA #}
                 {% for block in page_schema %}
                     {% if block.Header is defined %}
-                        <div class="form-group block-group" data-type="Header">
-                            <label for="header-{{ loop.index }}">Header</label>
-                            <textarea id="header-{{ loop.index }}">{{ block.Header.content.label }}</textarea>
-                        </div>
+                        {{ forms::header_textarea(index=loop.index, label=block.Header.content.label) }}
                     {% elif block.Footer is defined %}
-                        <div class="form-group block-group" data-type="Footer">
-                            <label for="footer-{{ loop.index }}">Footer</label>
-                            <input type="text" id="footer-{{ loop.index }}" value="{{ block.Footer.copyright.label }}" />
-                        </div>
+                        {{ forms::footer_input(index=loop.index, label=block.Footer.copyright.label) }}
                     {% endif %}
                 {% endfor %}
                 </div>
 
                 <div class="form-group">
                     <label for="add-block-select">Add Block</label>
-                    <select id="add-block-select">
+                    <select id="add-block-select" is="art-block-type-select">
                         <option value="Header">Header</option>
                         <option value="Footer">Footer</option>
                     </select>
