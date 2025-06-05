@@ -29,8 +29,8 @@
 
 {% macro post_ws_listener(uid) %}
 <post-ws-listener art-uid="{{uid}}"></post-ws-listener>
-<script>
-    class PostWsListener extends HTMLElement {
+<script defer type="module">
+    class PostWsListener extends HTMLDataElement {
         connectedCallback() {
             const postId = this.getAttribute('art-uid');
             if (!postId) {

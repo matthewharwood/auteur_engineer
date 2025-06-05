@@ -11,4 +11,11 @@ serde_json = "1.0"
 tera = "1"
 tower-http = { version = "0.5", features = ["fs"] }
 surrealdb = { version = "2.3.3", features = ["kv-mem", "protocol-ws"] }
-futures = "0.3"
+futures = "0.3" # todo(harwood) get rid of this futures
+url   = { version = "2.5", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+schemars     = { version = "0.8", features = [
+    "chrono",              # DateTime<Utc>
+    "url",                 # Url
+    "preserve_order"       # nice-to-have: stable field order
+] }
