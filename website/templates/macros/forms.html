@@ -26,3 +26,39 @@
     <input type="text" id="footer-{{ index }}" value="{{ label }}" />
 </div>
 {% endmacro %}
+
+{% macro post_ws_listener(uid) %}
+<post-ws-listener art-uid="{{uid}}"></post-ws-listener>
+<script>
+    class PostWsListener extends HTMLElement {
+        connectedCallback() {
+            const postId = this.getAttribute('art-uid');
+            if (!postId) {
+                console.warn('<post-ws-listener> requires a post-id attribute');
+                return;
+            }
+
+            this.ws = new WebSocket(`ws://${location.host}/rpc`);
+            this.ws.onmessage = evt => {
+                try {
+                    const [action, post] = JSON.parse(evt.data);
+                    if (action === 'Update' && post?.id?.id?.String === postId) {
+                        location.reload();
+                    }
+                } catch (err) {
+                    console.error('WebSocket message parsing error:', err);
+                }
+            };
+        }
+
+        disconnectedCallback() {
+            if (this.ws) {
+                this.ws.close();
+            }
+        }
+    }
+
+    customElements.define('post-ws-listener', PostWsListener);
+</script>
+{% endmacro %}
+

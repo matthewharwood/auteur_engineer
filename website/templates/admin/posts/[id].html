@@ -131,7 +131,8 @@
             <input is="art-block-input" type="text" />
         </div>
     </template>
-    <post-ws-listener art-uid="{{ post.id.id.String }}"></post-ws-listener>
+    {{ forms::post_ws_listener(uid=post.id.id.String) }}
+
     <script id="page-data" type="application/json">{{ page_schema | json_encode | safe }}</script>
     <script type="module">
         import {  signal, effect } from '/signal.js';
@@ -251,35 +252,7 @@
                 if (frag) preview.appendChild(frag);
             });
         });
-        class PostWsListener extends HTMLElement {
-            connectedCallback() {
-                const postId = this.getAttribute('art-uid');
-                if (!postId) {
-                    console.warn('<post-ws-listener> requires a post-id attribute');
-                    return;
-                }
 
-                this.ws = new WebSocket(`ws://${location.host}/rpc`);
-                this.ws.onmessage = evt => {
-                    try {
-                        const [action, post] = JSON.parse(evt.data);
-                        if (action === 'Update' && post?.id?.id?.String === postId) {
-                            location.reload();
-                        }
-                    } catch (err) {
-                        console.error('WebSocket message parsing error:', err);
-                    }
-                };
-            }
-
-            disconnectedCallback() {
-                if (this.ws) {
-                    this.ws.close();
-                }
-            }
-        }
-
-        customElements.define('post-ws-listener', PostWsListener);
 
     </script>
 </body>
