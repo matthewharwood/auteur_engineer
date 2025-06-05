@@ -228,20 +228,21 @@
 
                 Array.from(this.blocksContainer.children).forEach(ch => ch.setAttribute('art-uid', uid));
 
-                this.titleInput.addEventListener('input', () => {
+                this._titleListener = () => {
                     state.title.value = this.titleInput.value;
-                });
+                };
+                this.titleInput.addEventListener('input', this._titleListener);
 
-                this.addBtn.addEventListener('click', () => {
+                this._addListener = () => {
                     const type = this.select.value;
-                    const div = document.createElement('div');
-                    div.setAttribute('is', 'art-block-group');
+                    const div = document.createElement('div', { is: 'art-block-group' });
                     div.setAttribute('art-type', type);
                     div.setAttribute('art-uid', uid);
                     div.className = 'form-group';
                     this.blocksContainer.appendChild(div);
                     state.blocks.value = [...state.blocks.value, { type, label: '' }];
-                });
+                };
+                this.addBtn.addEventListener('click', this._addListener);
 
                 this._submit = async e => {
                     e.preventDefault();
@@ -277,6 +278,9 @@
                 });
             }
             disconnectedCallback() {
+                this.removeEventListener('submit', this._submit);
+                this.titleInput?.removeEventListener('input', this._titleListener);
+                this.addBtn?.removeEventListener('click', this._addListener);
                 this.ws?.close();
             }
         }
