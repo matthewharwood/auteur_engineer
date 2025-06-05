@@ -95,7 +95,7 @@
             <form is="art-post-form"
                   art-uid="{{ post.id.id.String }}"
                   art-title="{{ post.title.label }}"
-                  data-page-schema='{{ page_schema | json_encode | escape }}'>
+                  data-page-schema="{{ page_schema | json_encode | escape }}">
                 {{ forms::input(name="post-id", label="ID", value=post.id.id.String, attrs="disabled") }}
                 {{ forms::input(name="title", label="Title", value=post.title.label) }}
 
@@ -209,7 +209,13 @@
             connectedCallback() {
                 const uid = this.getAttribute('art-uid');
                 const title = this.getAttribute('art-title') || '';
-                const schema = JSON.parse(this.dataset.pageSchema || '[]');
+                const schemaAttr = this.getAttribute('data-page-schema');
+                let schema = [];
+                try {
+                    schema = schemaAttr ? JSON.parse(schemaAttr) : [];
+                } catch (err) {
+                    console.error('Failed to parse page schema', err);
+                }
                 const initialBlocks = schema.map(b =>
                     b.Header ? { type: 'Header', label: b.Header.content.label } : { type: 'Footer', label: b.Footer.copyright.label }
                 );
