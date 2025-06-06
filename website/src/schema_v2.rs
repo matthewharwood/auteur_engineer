@@ -45,32 +45,49 @@ pub enum Category {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct SeoMetadata {
+    // ─── core -----------------------------------------------------------
     #[schemars(schema_with = "textarea_widget_schema")]
-    pub title: String,
+    pub title:        Option<String>,
     #[schemars(schema_with = "textarea_widget_schema")]
-    pub description: Option<String>,
-    pub canonical: Option<Url>,
-    pub viewport: Option<String>,
+    pub description:  Option<String>,
+    pub canonical:    Option<Url>,
+    pub viewport:     Option<String>,
+
+    // ─── hero images ----------------------------------------------------
     #[serde(default)]
-    pub robots: RobotsMeta,
-    pub open_graph: Option<OpenGraph>,
-    pub twitter: Option<TwitterCard>,
+    pub images:       Vec<Url>,              // 0 … n images, default = empty
+
+    // ─── publication data ----------------------------------------------
+    pub published_time:  Option<DateTime<Utc>>,
+    pub modified_time:   Option<DateTime<Utc>>,
+    pub expiration_time: Option<DateTime<Utc>>,
     #[serde(default)]
-    pub alternates: Vec<Hreflang>,
-    pub schema_org: Option<serde_json::Value>,
+    pub authors:     Vec<Url>,
+    pub section:     Option<String>,
+    #[serde(default)]
+    pub tags:        Vec<String>,
+
+    // ─── advanced blocks -----------------------------------------------
+    pub robots:      Option<RobotsMeta>,
+    pub open_graph:  Option<OpenGraph>,
+    pub twitter:     Option<TwitterCard>,
+    #[serde(default)]
+    pub alternates:  Vec<Hreflang>,
+    pub schema_org:  Option<serde_json::Value>,
 }
 
 // ─── TWITTER CARD ───────────────────────────────────────────────────────────
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct TwitterCard {
-    pub card: TwitterCardType,
-    pub site: Option<String>,
-    pub creator: Option<String>,
-    pub title: Option<String>,
+    pub card:        Option<TwitterCardType>,
+    pub site:        Option<String>,
+    pub creator:     Option<String>,
+    pub title:       Option<String>,
     pub description: Option<String>,
-    pub image: Option<Url>,
-    pub image_alt: Option<String>,
-    pub player: Option<TwitterPlayer>,
+    #[serde(default)]
+    pub images:      Vec<Url>,
+    pub image_alt:   Option<String>,
+    pub player:      Option<TwitterPlayer>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub enum TwitterCardType {
@@ -90,19 +107,19 @@ pub struct TwitterPlayer {
 // ─── ROBOTS ─────────────────────────────────────────────────────────────────
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RobotsMeta {
-    pub index: bool,
-    pub follow: bool,
-    pub archive: bool,
-    pub max_snippet: Option<u32>,
-    pub max_image_preview: Option<ImagePreviewSize>,
-    pub max_video_preview: Option<u32>,
+    pub index:              Option<bool>,
+    pub follow:             Option<bool>,
+    pub archive:            Option<bool>,
+    pub max_snippet:        Option<u32>,
+    pub max_image_preview:  Option<ImagePreviewSize>,
+    pub max_video_preview:  Option<u32>,
 }
 impl Default for RobotsMeta {
     fn default() -> Self {
         Self {
-            index: true,
-            follow: true,
-            archive: true,
+            index: Some(true),
+            follow: Some(true),
+            archive: Some(true),
             max_snippet: None,
             max_image_preview: None,
             max_video_preview: None,
@@ -198,22 +215,37 @@ mod tests {
         let page = Page {
             id: None,
             metadata: SeoMetadata {
-                title: "Hello".into(),
-                description: Some("desc".into()),
-                canonical: Some("https://example.com".parse().unwrap()),
-                viewport: None,
-                robots: RobotsMeta::default(),
-                open_graph: None,
-                twitter: None,
-                alternates: vec![],
-                schema_org: None,
+                /* core --------------------------------------------------------- */
+                title:        Some("Hello".into()),
+                description:  Some("desc".into()),
+                canonical:    Some("https://example.com".parse().unwrap()),
+                viewport:     None,
+
+                /* hero images -------------------------------------------------- */
+                images:       vec![],
+
+                /* publication data -------------------------------------------- */
+                published_time:  None,
+                modified_time:   None,
+                expiration_time: None,
+                authors:         vec![],
+                section:         None,
+                tags:            vec![],
+
+                /* advanced ----------------------------------------------------- */
+                robots:      Some(RobotsMeta::default()),
+                open_graph:  None,
+                twitter:     None,
+                alternates:  vec![],
+                schema_org:  None,
             },
         };
+
 
         // Serialize to JSON; ensure it round-trips (basic smoke test)
         let json = serde_json::to_value(&page).unwrap();
         let page_back: Page = serde_json::from_value(json.clone()).unwrap();
-        assert_eq!(page_back.metadata.title, "Hello");
+        assert_eq!(page_back.metadata.title.as_deref(), Some("Hello"));
 
         // Extra sanity: JSON object has `metadata` key with `title`
         assert_eq!(json!({"metadata": {"title": "Hello", "description":"desc","robots":{"index":true,"follow":true,"archive":true}}})["metadata"]["title"], "Hello");

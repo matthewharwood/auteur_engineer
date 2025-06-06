@@ -1,0 +1,43 @@
+---
+source: website/src/macro_test.rs
+expression: html
+---
+    
+    <title>Hello</title>
+
+
+<meta name="description" content="desc">
+
+
+<link rel="canonical" href="https:&#x2F;&#x2F;example.com&#x2F;">
+
+
+
+
+
+
+<meta name="robots"
+      content="
+              index,
+              follow
+              
+              
+              
+              
+          ">
+
+
+
+
+
+<meta property="og:type"        content="website">
+<meta property="og:title"       content="Hello">
+<meta property="og:description" content="desc">
+
+
+
+
+
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Hello">
+<meta name="twitter:description" content="desc">

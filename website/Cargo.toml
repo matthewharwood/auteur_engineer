@@ -19,3 +19,6 @@ schemars     = { version = "0.8", features = [
     "url",                 # Url
     "preserve_order"       # nice-to-have: stable field order
 ] }
+
+[dev-dependencies]
+insta = { version = "1.34.0", features = ["yaml"] }   # yaml/ron/json all OK

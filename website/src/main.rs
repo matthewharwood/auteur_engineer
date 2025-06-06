@@ -22,7 +22,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
-    let tera_instance = match Tera::new("website/templates/**/*.html") {
+    let tera_instance = match Tera::new("website/src/templates/**/*.html") {
         Ok(t) => {
             println!("Tera templates loaded successfully.");
             t

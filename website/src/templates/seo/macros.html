@@ -1,0 +1,119 @@
+{# templates/seo/macros.html #}
+{% macro seo(meta) %}
+{# ---------- <title> & description ----------------- #}
+    {% if meta.title %}
+    <title>{{ meta.title | escape }}</title>
+{% endif %}
+{% if meta.description %}
+<meta name="description" content="{{ meta.description | escape }}">
+{% endif %}
+{% if meta.canonical %}
+<link rel="canonical" href="{{ meta.canonical }}">
+{% endif %}
+{% if meta.viewport %}
+<meta name="viewport" content="{{ meta.viewport }}">
+{% endif %}
+
+{# ---------- robots -------------------------------- #}
+{% if meta.robots %}
+{% set r = meta.robots %}
+<meta name="robots"
+      content="
+              {% if r.index  == false %}noindex{% else %}index{% endif %},
+              {% if r.follow == false %}nofollow{% else %}follow{% endif %}
+              {% if r.archive == false %}, noarchive{% endif %}
+              {% if r.max_snippet        %}, max-snippet:{{ r.max_snippet }}{% endif %}
+              {% if r.max_image_preview %}, max-image-preview:{{ r.max_image_preview | lower }}{% endif %}
+              {% if r.max_video_preview %}, max-video-preview:{{ r.max_video_preview }}{% endif %}
+          ">
+{% endif %}
+
+{# ---------- Open Graph ----------------------------- #}
+{% if meta.open_graph %}
+{% set og = meta.open_graph %}
+<meta property="og:type"        content="{{ og.og_type | lower }}">
+{% if og.url %}<meta property="og:url"  content="{{ og.url  }}">{% endif %}
+<meta property="og:title"       content="{{ og.title       | default(value=meta.title) }}">
+<meta property="og:description" content="{{ og.description | default(value=meta.description) }}">
+{% if og.site_name %}<meta property="og:site_name" content="{{ og.site_name }}">{% endif %}
+{% if og.locale    %}<meta property="og:locale"    content="{{ og.locale    }}">{% endif %}
+
+{% if og.images and og.images | length > 0 %}
+{% for img in og.images %}
+<meta property="og:image" content="{{ img.url }}">
+{% endfor %}
+{% elif meta.images %}
+{% for url in meta.images %}
+<meta property="og:image" content="{{ url }}">
+{% endfor %}
+{% endif %}
+{% elif meta.title or meta.description %}
+{# fallback block when no explicit OpenGraph struct #}
+<meta property="og:type"        content="website">
+<meta property="og:title"       content="{{ meta.title }}">
+<meta property="og:description" content="{{ meta.description }}">
+{% for url in meta.images %}
+<meta property="og:image" content="{{ url }}">
+{% endfor %}
+{% endif %}
+
+{# ---------- Twitter Card --------------------------- #}
+{% if meta.twitter %}
+{% set tw = meta.twitter %}
+<meta name="twitter:card"
+      content="{{ tw.card | default(value='summary_large_image') | lower | replace(from='-', to='') }}">
+{% if tw.site    %}<meta name="twitter:site"    content="{{ tw.site    }}">{% endif %}
+{% if tw.creator %}<meta name="twitter:creator" content="{{ tw.creator }}">{% endif %}
+<meta name="twitter:title"       content="{{ tw.title       | default(value=meta.title) }}">
+<meta name="twitter:description" content="{{ tw.description | default(value=meta.description) }}">
+
+{% if tw.images and tw.images | length > 0 %}
+<meta name="twitter:image" content="{{ tw.images[0] }}">
+{% elif meta.images and meta.images | length > 0 %}
+<meta name="twitter:image" content="{{ meta.images[0] }}">
+{% endif %}
+{% if tw.image_alt %}
+<meta name="twitter:image:alt" content="{{ tw.image_alt }}">
+{% endif %}
+{% elif meta.title or meta.description %}
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="{{ meta.title }}">
+<meta name="twitter:description" content="{{ meta.description }}">
+{% if meta.images and meta.images | length > 0 %}
+<meta name="twitter:image" content="{{ meta.images[0] }}">
+{% endif %}
+{% endif %}
+
+{# ---------- publication meta (article) ------------- #}
+{% if meta.published_time %}
+<meta property="article:published_time"
+      content="{{ meta.published_time | date(format="%Y-%m-%dT%H:%M:%SZ") }}">
+{% endif %}
+{% if meta.modified_time %}
+<meta property="article:modified_time"
+      content="{{ meta.modified_time | date(format="%Y-%m-%dT%H:%M:%SZ") }}">
+{% endif %}
+{% if meta.expiration_time %}
+<meta property="article:expiration_time"
+      content="{{ meta.expiration_time | date(format="%Y-%m-%dT%H:%M:%SZ") }}">
+{% endif %}
+{% for author in meta.authors %}
+<meta property="article:author" content="{{ author }}">
+{% endfor %}
+{% if meta.section %}
+<meta property="article:section" content="{{ meta.section }}">
+{% endif %}
+{% for tag in meta.tags %}
+<meta property="article:tag" content="{{ tag }}">
+{% endfor %}
+
+{# ---------- hreflang -------------------------------- #}
+{% for alt in meta.alternates %}
+<link rel="alternate" hreflang="{{ alt.lang }}" href="{{ alt.url }}">
+{% endfor %}
+
+{# ---------- JSON-LD -------------------------------- #}
+{% if meta.schema_org %}
+<script type="application/ld+json">{{ meta.schema_org | safe }}</script>
+{% endif %}
+{% endmacro %}
