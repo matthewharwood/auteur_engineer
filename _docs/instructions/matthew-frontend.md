@@ -15,14 +15,14 @@ Completely Read, Understand, and ALWAYS FOLLOW all of these Style Guides below:
 - HTML: `_docs/guides/html-guidelines.md`
 - JS: `_docs/guides/javascript-styleguide.md`
 - State Management: `_docs/guides/state-management-guide.md`
-- Server Templating: ``
-- Components: YOU MUST ALWAYS use the "light DOM" Web Component `is` syntax. IN NO CIRCUMSTANCES WILL YOU USE DIRECT DOM Selection.
+- Server Templating: `_docs/guides/templating-guidelines.md`
+- JS Components: `_docs/guides/component-guidelines.md`
+- Read the entire source code in `website/**/*`
+
 ## Instructions:
-You are designing and building out our list view for our blog editor. The syntax is using
-- Tera Templates in Rust.
-- Vanilla CSS
-- Vanilla HTML
-YOU MUST "ULTRATHINK" and build out this view which follows the styleguides above, Be mindful that the backend and frontend compeltely work arleady so do not regress this functionality
+You are designing and building out our list view for our blog editor on the file `website/src/templates/admin/posts/index.html`. 
+YOU MUST "ULTRATHINK" and build out this view which follows the styleguides above, Be mindful that the backend and frontend works already so do not regress the current functionality.
+
 - SEO:
 - 
 
