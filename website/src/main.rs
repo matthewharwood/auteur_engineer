@@ -35,7 +35,6 @@ async fn main() {
     let shared_tera = Arc::new(tera_instance);
 
     println!("Attempting to connect to SurrealDB at ws://127.0.0.1:8000...");
-    // Use Ws as the generic type for Surreal::new()
     let db = match Surreal::new::<Ws>("127.0.0.1:8000").await {
         Ok(db_instance) => {
             println!("Successfully initiated SurrealDB connection.");
